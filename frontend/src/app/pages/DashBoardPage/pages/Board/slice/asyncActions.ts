@@ -15,11 +15,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { DownloadFileType } from 'app/constants';
 import { migrateWidgets } from 'app/migration/BoardConfig/migrateWidgets';
 import { FilterSearchParamsWithMatch } from 'app/pages/MainPage/pages/VizPage/slice/types';
 import { mainActions } from 'app/pages/MainPage/slice';
-import ChartDataRequest from 'app/types/ChartDataRequest';
+import { ChartDataRequest } from 'app/types/ChartDataRequest';
 import { makeDownloadDataTask } from 'app/utils/fetch';
+import { RootState } from 'types';
 import { boardActions } from '.';
 import { getBoardChartRequests } from '../../../utils';
 import {
@@ -42,7 +44,6 @@ export const handleServerBoardAction =
   }) =>
   async (dispatch, getState) => {
     const { data, renderMode, filterSearchMap } = params;
-
     const dashboard = getDashBoardByResBoard(data);
     const { datacharts, views: serverViews, widgets: serverWidgets } = data;
 
@@ -53,52 +54,71 @@ export const handleServerBoardAction =
       dataCharts,
       filterSearchMap,
     );
-
     const widgetIds = Object.values(widgetMap).map(w => w.id);
-    //
     let boardInfo = getInitBoardInfo({
       id: dashboard.id,
       widgetIds,
       controllerWidgets,
     });
-
     if (renderMode === 'schedule') {
       boardInfo = getScheduleBoardInfo(boardInfo, widgetMap);
     }
+    const widgetInfoMap = getWidgetInfoMapByServer(widgetMap);
 
     const allDataCharts: DataChart[] = dataCharts.concat(wrappedDataCharts);
+
     const viewViews = getChartDataView(serverViews, allDataCharts);
-    const widgetInfoMap = getWidgetInfoMapByServer(widgetMap);
-    dispatch(
-      boardActions.setBoardDetailToState({
+
+    await dispatch(
+      boardActions.setBoardState({
         board: dashboard,
         boardInfo: boardInfo,
-        views: viewViews,
+      }),
+    );
+    dispatch(boardActions.setViewMap(viewViews));
+    dispatch(boardActions.setDataChartToMap(allDataCharts));
+    dispatch(
+      boardActions.setWidgetMapState({
+        boardId: dashboard.id,
         widgetMap: widgetMap,
         widgetInfoMap: widgetInfoMap,
-        dataCharts: allDataCharts,
       }),
     );
   };
 
 export const boardDownLoadAction =
-  (params: { boardId: string; renderMode: VizRenderMode }) =>
+  (params: { boardId: string; downloadType: DownloadFileType }) =>
   async (dispatch, getState) => {
-    const { boardId, renderMode } = params;
+    const state = getState() as RootState;
+    const { boardId, downloadType } = params;
+    const vizs = state.viz?.vizs;
+    const folderId = vizs?.filter(v => v.relId === boardId)[0].id;
+    const boardInfoRecord = state.board?.boardInfoRecord;
+    let imageWidth = 0;
+
+    if (boardInfoRecord) {
+      const { boardWidthHeight } = Object.values(boardInfoRecord)[0];
+      imageWidth = boardWidthHeight[0];
+    }
+
     const { requestParams, fileName } = await dispatch(
       getBoardDownloadParams({ boardId }),
     );
-    if (renderMode === 'read') {
-      dispatch(
-        makeDownloadDataTask({
-          downloadParams: requestParams,
-          fileName,
-          resolve: () => {
-            dispatch(mainActions.setDownloadPolling(true));
-          },
-        }),
-      );
-    }
+
+    dispatch(
+      makeDownloadDataTask({
+        downloadParams:
+          downloadType === DownloadFileType.Excel
+            ? requestParams
+            : [{ analytics: false, vizType: 'dashboard', vizId: folderId }],
+        fileName,
+        downloadType,
+        imageWidth,
+        resolve: () => {
+          dispatch(mainActions.setDownloadPolling(true));
+        },
+      }),
+    );
   };
 export const getBoardDownloadParams =
   (params: { boardId: string }) => (dispatch, getState) => {

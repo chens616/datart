@@ -86,25 +86,8 @@ const config: ChartConfig = {
         {
           label: 'label.position',
           key: 'position',
-          comType: 'select',
+          comType: 'labelPosition',
           default: 'top',
-          options: {
-            items: [
-              { label: '上', value: 'top' },
-              { label: '左', value: 'left' },
-              { label: '右', value: 'right' },
-              { label: '下', value: 'bottom' },
-              { label: '内', value: 'inside' },
-              { label: '内左', value: 'insideLeft' },
-              { label: '内右', value: 'insideRight' },
-              { label: '内上', value: 'insideTop' },
-              { label: '内下', value: 'insideBottom' },
-              { label: '内左上', value: 'insideTopLeft' },
-              { label: '内左下', value: 'insideBottomLeft' },
-              { label: '内右上', value: 'insideTopRight' },
-              { label: '内右下', value: 'insideBottomRight' },
-            ],
-          },
         },
         {
           label: 'viz.palette.style.font',
@@ -146,15 +129,17 @@ const config: ChartConfig = {
         {
           label: 'legend.position',
           key: 'position',
-          comType: 'select',
+          comType: 'legendPosition',
           default: 'right',
+        },
+        {
+          label: 'legend.height',
+          key: 'height',
+          default: 0,
+          comType: 'inputNumber',
           options: {
-            items: [
-              { label: '右', value: 'right' },
-              { label: '上', value: 'top' },
-              { label: '下', value: 'bottom' },
-              { label: '左', value: 'left' },
-            ],
+            step: 40,
+            min: 0,
           },
         },
         {
@@ -507,6 +492,7 @@ const config: ChartConfig = {
           type: '图例类型',
           selectAll: '图例全选',
           position: '图例位置',
+          height: '图例高度',
         },
         data: {
           color: '颜色',
@@ -561,6 +547,7 @@ const config: ChartConfig = {
           title: 'Label',
           showLabel: 'Show Label',
           position: 'Position',
+          height: 'Height',
         },
         legend: {
           title: 'Legend',
@@ -568,6 +555,7 @@ const config: ChartConfig = {
           type: 'Type',
           selectAll: 'Select All',
           position: 'Position',
+          height: 'Height',
         },
         data: {
           color: 'Color',

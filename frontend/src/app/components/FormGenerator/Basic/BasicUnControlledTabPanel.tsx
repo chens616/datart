@@ -34,8 +34,9 @@ import {
   resetValue,
 } from 'utils/object';
 import { uuidv4 } from 'utils/utils';
+import { FormGroupLayoutMode } from '../constants';
 import GroupLayout from '../Layout/GroupLayout';
-import { GroupLayoutMode, ItemLayoutProps } from '../types';
+import { ItemLayoutProps } from '../types';
 import { itemLayoutComparer } from '../utils';
 
 const { TabPane } = Tabs;
@@ -77,7 +78,7 @@ const BasicUnControlledTabPanel: FC<ItemLayoutProps<ChartStyleConfig>> = memo(
 
     const [activeTabKey, setActiveTabKey] = useState<string | undefined>();
     const [paneTemplate] = useState(() => {
-      const firstRow = (myData?.rows || [])[0];
+      const firstRow = myData?.template;
       return cleanChartConfigValueByDefaultValue([CloneValueDeep(firstRow)])[0];
     });
 
@@ -149,7 +150,7 @@ const BasicUnControlledTabPanel: FC<ItemLayoutProps<ChartStyleConfig>> = memo(
         <GroupLayout
           ancestors={[index]}
           key={r.key}
-          mode={GroupLayoutMode.INNER}
+          mode={FormGroupLayoutMode.INNER}
           data={r}
           translate={t}
           dataConfigs={dataConfigs}
@@ -166,25 +167,32 @@ const BasicUnControlledTabPanel: FC<ItemLayoutProps<ChartStyleConfig>> = memo(
         onEdit={handleEdit}
       >
         {myData.rows?.map((p, index) => {
+          const rowKey = p.key;
           return (
-            <TabPane
-              key={p.key}
+            <StyledTabPanel
+              key={rowKey}
               tab={
                 <EditableTabHeader
                   editable={editable}
                   label={p.label}
-                  onChange={value => {
-                    const newAncerstors = [index];
-                    handleDataChange(newAncerstors, {
-                      ...p,
-                      ...{ label: value },
-                    });
+                  rowKey={rowKey}
+                  onChange={(key, value) => {
+                    const updatedRowIndex = myData.rows?.findIndex(
+                      r => r.key === key,
+                    );
+                    if (updatedRowIndex !== undefined && updatedRowIndex > -1) {
+                      const newAncestors = [updatedRowIndex];
+                      handleDataChange(newAncestors, {
+                        ...p,
+                        ...{ label: value },
+                      });
+                    }
                   }}
                 />
               }
             >
               {renderTabPaneContent(p, index)}
-            </TabPane>
+            </StyledTabPanel>
           );
         })}
       </StyledBasicUnControlledTabPanel>
@@ -195,9 +203,10 @@ const BasicUnControlledTabPanel: FC<ItemLayoutProps<ChartStyleConfig>> = memo(
 
 const EditableTabHeader: FC<{
   label: string;
+  rowKey: string;
   editable?: Boolean;
-  onChange: (value: string) => void;
-}> = memo(({ label, editable = true, onChange }) => {
+  onChange: (key: string, value: string) => void;
+}> = memo(({ label, rowKey, editable = true, onChange }) => {
   const [isEditing, setIsEditing] = useState(false);
 
   const render = () => {
@@ -211,7 +220,7 @@ const EditableTabHeader: FC<{
         onSearch={value => {
           if (!!value) {
             setIsEditing(false);
-            onChange(value);
+            onChange(rowKey, value);
           }
         }}
       />
@@ -233,8 +242,14 @@ const EditableTabHeader: FC<{
 
 export default BasicUnControlledTabPanel;
 
+const StyledTabPanel = styled(TabPane)`
+  & .chart-config-group-layout {
+    padding: 0;
+  }
+`;
+
 const StyledBasicUnControlledTabPanel = styled(Tabs)`
-  & .ant-tabs-nav .ant-tabs-tab {
-    margin: 0 !important;
+  & .ant-tabs-nav {
+    margin-bottom: 0;
   }
 `;

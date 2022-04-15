@@ -3,7 +3,7 @@ import { EmptyFiller, TabPane, Tabs } from 'app/components';
 import useI18NPrefix from 'app/hooks/useI18NPrefix';
 import BoardEditor from 'app/pages/DashBoardPage/pages/BoardEditor';
 import { selectOrgId } from 'app/pages/MainPage/slice/selectors';
-import { StoryPlayer } from 'app/pages/StoryBoardPage/Player';
+import { dispatchResize } from 'app/utils/dispatchResize';
 import { useCallback, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
@@ -121,6 +121,9 @@ export function Main({ sliderVisible }: { sliderVisible: boolean }) {
           `/organizations/${orgId}/vizs/${activeKey}${activeTab.search || ''}`,
         );
       }
+      setTimeout(() => {
+        dispatchResize();
+      }, 500);
     },
     [history, orgId, tabs],
   );
@@ -190,10 +193,6 @@ export function Main({ sliderVisible }: { sliderVisible: boolean }) {
       {!tabs.length && <EmptyFiller title={t('empty')} />}
 
       <Switch>
-        <Route
-          path="/organizations/:orgId/vizs/:vizId?/storyPlay"
-          render={() => <StoryPlayer storyId={vizId} />}
-        />
         <Route
           path="/organizations/:orgId/vizs/:vizId?/boardEditor"
           render={() => <BoardEditor boardId={vizId} />}

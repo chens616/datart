@@ -19,15 +19,14 @@
 import { Input } from 'antd';
 import useDebouncedFormValue from 'app/hooks/useDebouncedFormValue';
 import { ChartStyleConfig } from 'app/types/ChartConfig';
-import { FC, memo } from 'react';
-import styled from 'styled-components/macro';
+import { FC, memo, useCallback } from 'react';
 import { ItemLayoutProps } from '../types';
 import { itemLayoutComparer } from '../utils';
 import { BW } from './components/BasicWrapper';
 
 const BasicInput: FC<ItemLayoutProps<ChartStyleConfig>> = memo(
   ({ ancestors, translate: t = title => title, data, onChange }) => {
-    const { options, ...rest } = data;
+    const { options, comType, ...rest } = data;
     const [formValue, debouncedUpdateValue] = useDebouncedFormValue(
       data?.value,
       {
@@ -38,28 +37,28 @@ const BasicInput: FC<ItemLayoutProps<ChartStyleConfig>> = memo(
       onChange,
     );
 
+    const inputOnChange = useCallback(
+      e => {
+        debouncedUpdateValue(e.target.value);
+      },
+      [debouncedUpdateValue],
+    );
+
     return (
-      <Wrapper label={t(data?.label, true)}>
+      <BW label={t(data?.label, true)}>
         <Input
+          className="datart-ant-input"
           {...rest}
           {...options}
           value={formValue}
-          onChange={debouncedUpdateValue}
+          onChange={inputOnChange}
           defaultValue={data?.default}
+          // disabled
         />
-      </Wrapper>
+      </BW>
     );
   },
   itemLayoutComparer,
 );
 
 export default BasicInput;
-
-const Wrapper = styled(BW)`
-  .ant-input {
-    color: ${p => p.theme.textColorSnd};
-    background-color: ${p => p.theme.emphasisBackground};
-    border-color: ${p => p.theme.emphasisBackground};
-    box-shadow: none;
-  }
-`;

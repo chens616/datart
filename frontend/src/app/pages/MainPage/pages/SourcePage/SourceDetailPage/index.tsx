@@ -26,8 +26,14 @@ import {
   PermissionLevels,
   ResourceTypes,
 } from 'app/pages/MainPage/pages/PermissionPage/constants';
+import { fetchCheckName } from 'app/utils/fetch';
 import debounce from 'debounce-promise';
-import { CommonFormTypes, DEFAULT_DEBOUNCE_WAIT } from 'globalConstants';
+import {
+  CommonFormTypes,
+  DEFAULT_DEBOUNCE_WAIT,
+  TIME_FORMATTER,
+} from 'globalConstants';
+import moment from 'moment';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useHistory, useRouteMatch } from 'react-router-dom';
@@ -54,6 +60,7 @@ import {
   selectDeleteSourceLoading,
   selectEditingSource,
   selectSaveSourceLoading,
+  selectSyncSourceSchemaLoading,
   selectUnarchiveSourceLoading,
 } from '../slice/selectors';
 import {
@@ -61,15 +68,18 @@ import {
   deleteSource,
   editSource,
   getSource,
+  syncSourceSchema,
   unarchiveSource,
 } from '../slice/thunks';
 import { Source, SourceFormModel } from '../slice/types';
 import { allowCreateSource, allowManageSource } from '../utils';
 import { ConfigComponent } from './ConfigComponent';
+
 export function SourceDetailPage() {
   const [formType, setFormType] = useState(CommonFormTypes.Add);
   const [providerType, setProviderType] = useState('');
   const [testLoading, setTestLoading] = useState(false);
+  const [lastUpdateTime, setLastUpdateTime] = useState<string | undefined>();
   const { actions } = useSourceSlice();
   const dispatch = useDispatch();
   const history = useHistory();
@@ -83,6 +93,7 @@ export function SourceDetailPage() {
   const saveSourceLoading = useSelector(selectSaveSourceLoading);
   const unarchiveSourceLoading = useSelector(selectUnarchiveSourceLoading);
   const deleteSourceLoading = useSelector(selectDeleteSourceLoading);
+  const syncSourceSchemaLoading = useSelector(selectSyncSourceSchemaLoading);
   const { params } = useRouteMatch<{ sourceId: string }>();
   const { sourceId } = params;
   const [form] = Form.useForm<SourceFormModel>();
@@ -126,6 +137,7 @@ export function SourceDetailPage() {
       const { name, type, config } = editingSource;
       try {
         setProviderType(type);
+        setLastUpdateTime(editingSource?.schemaUpdateDate);
         form.setFieldsValue({ name, type, config: JSON.parse(config) });
       } catch (error) {
         message.error(tg('operation.parseError'));
@@ -323,6 +335,16 @@ export function SourceDetailPage() {
       },
     });
   }, [history, orgId, editingSource]);
+
+  const handleSyncDatabase = async () => {
+    if (!editingSource?.id) {
+      return;
+    }
+    await dispatch(syncSourceSchema({ sourceId: editingSource.id }));
+    setLastUpdateTime(moment().format(TIME_FORMATTER));
+    message.success(t('syncDatabaseSchemaSuccess'));
+  };
+
   return (
     <Authorized
       authority={allowCreate || allowManage}
@@ -343,6 +365,13 @@ export function SourceDetailPage() {
                     {t('creatView')}
                   </Button>
                 )}
+                <Button
+                  disabled={!Boolean(editingSource?.id)}
+                  loading={syncSourceSchemaLoading}
+                  onClick={handleSyncDatabase}
+                >
+                  {t('syncDatabase')}
+                </Button>
                 <Button
                   type="primary"
                   loading={saveSourceLoading}
@@ -384,7 +413,14 @@ export function SourceDetailPage() {
           }
         />
         <Content>
-          <Card bordered={false}>
+          <Card
+            bordered={false}
+            extra={
+              <div>
+                {lastUpdateTime && `${t('lastUpdateTime')}: ${lastUpdateTime}`}
+              </div>
+            }
+          >
             <Form
               name="source_form_"
               className="detailForm"
@@ -408,15 +444,13 @@ export function SourceDetailPage() {
                       if (value === editingSource?.name) {
                         return Promise.resolve();
                       }
-                      return request({
-                        url: `/sources/check/name`,
-                        method: 'POST',
-                        data: { name: value, orgId },
-                      }).then(
-                        () => Promise.resolve(),
-                        err =>
-                          Promise.reject(new Error(err.response.data.message)),
-                      );
+                      if (!value.trim()) {
+                        return Promise.reject(
+                          `${t('form.name')}${tg('validation.required')}`,
+                        );
+                      }
+                      const data = { name: value, orgId };
+                      return fetchCheckName('sources', data);
                     }, DEFAULT_DEBOUNCE_WAIT),
                   },
                 ]}

@@ -16,8 +16,12 @@
  * limitations under the License.
  */
 import CategoryConditionRelationSelector from './CategoryConditionRelationSelector';
-import FilterControllPanel from './FilterControlPanel';
+import FilterControlPanel from './FilterControlPanel';
 
 export { CategoryConditionRelationSelector };
 
-export default FilterControllPanel;
+export type FilterOptionForwardRef = {
+  onValidate: (value) => boolean;
+};
+
+export default FilterControlPanel;

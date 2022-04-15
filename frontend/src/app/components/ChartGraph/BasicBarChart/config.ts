@@ -26,6 +26,7 @@ const config: ChartConfig = {
       required: true,
       type: 'group',
       limit: [0, 1],
+      drillable: true,
     },
     {
       label: 'metrics',
@@ -168,26 +169,8 @@ const config: ChartConfig = {
         {
           label: 'label.position',
           key: 'position',
-          comType: 'select',
+          comType: 'labelPosition',
           default: 'top',
-          options: {
-            // TODO(Stephen): to be extract customize LabelPosition Component
-            items: [
-              { label: '上', value: 'top' },
-              { label: '左', value: 'left' },
-              { label: '右', value: 'right' },
-              { label: '下', value: 'bottom' },
-              { label: '内', value: 'inside' },
-              { label: '内左', value: 'insideLeft' },
-              { label: '内右', value: 'insideRight' },
-              { label: '内上', value: 'insideTop' },
-              { label: '内下', value: 'insideBottom' },
-              { label: '内左上', value: 'insideTopLeft' },
-              { label: '内左下', value: 'insideBottomLeft' },
-              { label: '内右上', value: 'insideTopRight' },
-              { label: '内右下', value: 'insideBottomRight' },
-            ],
-          },
         },
         {
           label: 'viz.palette.style.font',
@@ -217,14 +200,8 @@ const config: ChartConfig = {
         {
           label: 'legend.type',
           key: 'type',
-          comType: 'select',
+          comType: 'legendType',
           default: 'scroll',
-          options: {
-            items: [
-              { label: '普通', value: 'plain' },
-              { label: '滚动', value: 'scroll' },
-            ],
-          },
         },
         {
           label: 'legend.selectAll',
@@ -237,13 +214,15 @@ const config: ChartConfig = {
           key: 'position',
           comType: 'select',
           default: 'right',
+        },
+        {
+          label: 'legend.height',
+          key: 'height',
+          default: 0,
+          comType: 'inputNumber',
           options: {
-            items: [
-              { label: '右', value: 'right' },
-              { label: '上', value: 'top' },
-              { label: '下', value: 'bottom' },
-              { label: '左', value: 'left' },
-            ],
+            step: 40,
+            min: 0,
           },
         },
         {
@@ -391,14 +370,7 @@ const config: ChartConfig = {
           label: 'common.nameLocation',
           key: 'nameLocation',
           default: 'center',
-          comType: 'select',
-          options: {
-            items: [
-              { label: '开始', value: 'start' },
-              { label: '结束', value: 'end' },
-              { label: '中间', value: 'center' },
-            ],
-          },
+          comType: 'nameLocation',
         },
         {
           label: 'common.nameRotate',
@@ -553,6 +525,7 @@ const config: ChartConfig = {
           position: '位置',
           showInterval: '显示刻度',
           interval: '刻度间隔',
+          overflow: '溢出',
           showTitleAndUnit: '显示标题和刻度',
           nameLocation: '标题位置',
           nameRotate: '标题旋转',
@@ -571,6 +544,7 @@ const config: ChartConfig = {
           type: '图例类型',
           selectAll: '图例全选',
           position: '图例位置',
+          height: '图例高度',
         },
         data: {
           color: '颜色',
@@ -624,6 +598,7 @@ const config: ChartConfig = {
           position: 'Position',
           showInterval: 'Show Interval',
           interval: 'Interval',
+          overflow: 'Overflow',
           showTitleAndUnit: 'Show Title and Unit',
           nameLocation: 'Name Location',
           nameRotate: 'Name Rotate',
@@ -635,6 +610,7 @@ const config: ChartConfig = {
           title: 'Label',
           showLabel: 'Show Label',
           position: 'Position',
+          height: 'Height',
         },
         legend: {
           title: 'Legend',
@@ -642,6 +618,7 @@ const config: ChartConfig = {
           type: 'Type',
           selectAll: 'Select All',
           position: 'Position',
+          height: 'Height',
         },
         data: {
           color: 'Color',
@@ -667,7 +644,7 @@ const config: ChartConfig = {
           title: 'Y Axis',
         },
         splitLine: {
-          title: 'Splite Line',
+          title: 'Split Line',
           showHorizonLine: 'Show Horizontal Line',
           showVerticalLine: 'Show Vertical Line',
         },

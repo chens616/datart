@@ -16,8 +16,13 @@
  * limitations under the License.
  */
 
-export { default as ConditionStylePanel } from './ConditionStylePanel';
+export { default as ConditionalStylePanel } from './ConditionalStyle';
 export { default as DataReferencePanel } from './DataReferencePanel';
 export { default as FontAlignment } from './FontAlignment';
+export { default as LabelPosition } from './LabelPosition';
+export { default as LegendPosition } from './LegendPosition';
+export { default as LegendType } from './LegendType';
 export { default as ListTemplatePanel } from './ListTemplatePanel';
+export { default as NameLocation } from './NameLocation';
+export { default as ScorecardConditionalStylePanel } from './ScorecardConditionalStyle';
 export { default as UnControlledTableHeaderPanel } from './UnControlledTableHeaderPanel';

@@ -19,25 +19,25 @@
 import { FormOutlined, PlusOutlined } from '@ant-design/icons';
 import { message, Popover, Tooltip, TreeSelect } from 'antd';
 import { ToolbarButton } from 'app/components';
+import { ChartDataViewFieldCategory, DataViewFieldType } from 'app/constants';
 import useI18NPrefix from 'app/hooks/useI18NPrefix';
 import useMount from 'app/hooks/useMount';
 import useStateModal, { StateModalSize } from 'app/hooks/useStateModal';
 import useToggle from 'app/hooks/useToggle';
-import workbenchSlice, {
+import workbenchSlice from 'app/pages/ChartWorkbenchPage/slice';
+import {
   dataviewsSelector,
-  fetchViewDetailAction,
   makeDataviewTreeSelector,
-} from 'app/pages/ChartWorkbenchPage/slice/workbenchSlice';
+} from 'app/pages/ChartWorkbenchPage/slice/selectors';
+import { fetchViewDetailAction } from 'app/pages/ChartWorkbenchPage/slice/thunks';
 import { useAccess, useCascadeAccess } from 'app/pages/MainPage/Access';
 import {
   PermissionLevels,
   ResourceTypes,
 } from 'app/pages/MainPage/pages/PermissionPage/constants';
+import { ColumnRole } from 'app/pages/MainPage/pages/ViewPage/slice/types';
 import { ChartConfig } from 'app/types/ChartConfig';
-import ChartDataView, {
-  ChartDataViewFieldCategory,
-  ChartDataViewFieldType,
-} from 'app/types/ChartDataView';
+import ChartDataView from 'app/types/ChartDataView';
 import { ChartDataViewMeta } from 'app/types/ChartDataViewMeta';
 import { checkComputedFieldAsync } from 'app/utils/fetch';
 import { updateByKey } from 'app/utils/mutation';
@@ -66,6 +66,12 @@ const ChartDataViewPanel: FC<{
   const [showModal, modalContextHolder] = useStateModal({});
   const [isDisplayAddNewModal, setIsDisplayAddNewModal] = useToggle();
   const views = useSelector(dataviewsSelector);
+
+  useMount(() => {
+    if (defaultViewId) {
+      handleDataViewChange(defaultViewId);
+    }
+  });
 
   const path = useMemo(() => {
     return views?.length && dataView
@@ -228,33 +234,38 @@ const ChartDataViewPanel: FC<{
     });
   };
 
-  const getSortedFields = (dataView?: ChartDataView) => {
-    const stringFields =
-      (dataView?.meta || [])
-        .concat(dataView?.computedFields || [])
-        ?.filter(f => f.type === ChartDataViewFieldType.STRING) || [];
-    const numericFields =
-      (dataView?.meta || [])
-        .concat(dataView?.computedFields || [])
-        ?.filter(f => f.type === ChartDataViewFieldType.NUMERIC) || [];
-    const dateFields =
-      (dataView?.meta || [])
-        .concat(dataView?.computedFields || [])
-        ?.filter(f => f.type === ChartDataViewFieldType.DATE) || [];
-    return [...dateFields, ...stringFields, ...numericFields];
-  };
+  const sortedMetaFields = useMemo(() => {
+    const allFields = (dataView?.meta || []).concat(
+      dataView?.computedFields || [],
+    );
+    const hierarchyFields = allFields.filter(
+      f => f.role === ColumnRole.Hierarchy,
+    );
+    const allNonHierarchyFields = allFields.filter(
+      f => f.role !== ColumnRole.Hierarchy,
+    );
+    const stringFields = allNonHierarchyFields.filter(
+      f => f.type === DataViewFieldType.STRING,
+    );
+    const numericFields = allNonHierarchyFields.filter(
+      f => f.type === DataViewFieldType.NUMERIC,
+    );
+    const dateFields = allNonHierarchyFields.filter(
+      f => f.type === DataViewFieldType.DATE,
+    );
+    return [
+      ...hierarchyFields,
+      ...dateFields,
+      ...stringFields,
+      ...numericFields,
+    ];
+  }, [dataView?.meta, dataView?.computedFields]);
 
   const editView = useCallback(() => {
     let orgId = dataView?.orgId as string;
     let viewId = dataView?.id as string;
     history.push(`/organizations/${orgId}/views/${viewId}`);
   }, [dataView?.id, dataView?.orgId, history]);
-
-  useMount(() => {
-    if (defaultViewId) {
-      handleDataViewChange(defaultViewId);
-    }
-  });
 
   const handleConfirmVisible = useCallback(() => {
     (showModal as Function)({
@@ -311,7 +322,7 @@ const ChartDataViewPanel: FC<{
         {modalContextHolder}
       </Header>
       <ChartDraggableSourceGroupContainer
-        meta={getSortedFields(dataView)}
+        meta={sortedMetaFields}
         onDeleteComputedField={handleDeleteComputedField}
         onEditComputedField={handleEditComputedField}
       />
@@ -325,6 +336,7 @@ const StyledChartDataViewPanel = styled.div`
   display: flex;
   flex-direction: column;
   height: 100%;
+  background-color: ${p => p.theme.componentBackground};
 `;
 
 const Header = styled.div`

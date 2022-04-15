@@ -18,12 +18,10 @@
 
 import { Select } from 'antd';
 import { ChartStyleConfig } from 'app/types/ChartConfig';
-import { FC, memo } from 'react';
-import styled from 'styled-components/macro';
-import { BORDER_RADIUS } from 'styles/StyleConstants';
-import { AssignDeep, isEmpty } from 'utils/object';
+import { FC, memo, useMemo } from 'react';
+import { isEmpty } from 'utils/object';
 import { ItemLayoutProps } from '../types';
-import { itemLayoutComparer } from '../utils';
+import { itemLayoutComparer, removeSomeObjectConfigByKey } from '../utils';
 import { BW } from './components/BasicWrapper';
 
 const BasicSelector: FC<ItemLayoutProps<ChartStyleConfig>> = memo(
@@ -42,10 +40,10 @@ const BasicSelector: FC<ItemLayoutProps<ChartStyleConfig>> = memo(
       onChange?.(ancestors, value, options?.needRefresh);
     };
 
-    const getDataConfigs = () => {
-      // TODO(stephen): consider js sandbox(ES6 Proxy?) to avoid hack injection
-      return dataConfigs?.map(col => AssignDeep(col));
-    };
+    const cachedDataConfigs = useMemo(
+      () => dataConfigs?.map(col => ({ ...col })),
+      [dataConfigs],
+    );
 
     const safeInvokeAction = () => {
       let results: any[] = [];
@@ -54,25 +52,27 @@ const BasicSelector: FC<ItemLayoutProps<ChartStyleConfig>> = memo(
           typeof row?.options?.getItems === 'function'
             ? row?.options?.getItems.call(
                 Object.create(null),
-                getDataConfigs(),
+                cachedDataConfigs,
               ) || []
             : row?.options?.items || [];
       } catch (error) {
-        console.error(
-          `VizDataColumnSelector | invoke action error ---> `,
-          error,
-        );
+        console.error(`BasicSelector | invoke action error ---> `, error);
       }
-
       return results;
     };
 
+    const newOptions = useMemo(() => {
+      const removeKeyList = ['translateItemLabel'];
+      return removeSomeObjectConfigByKey(removeKeyList, options);
+    }, [options]);
+
     return (
-      <Wrapper label={!hideLabel ? t(row.label, true) : ''}>
+      <BW label={!hideLabel ? t(row.label, true) : ''}>
         <Select
+          className="datart-ant-select"
           dropdownMatchSelectWidth
           {...rest}
-          {...options}
+          {...newOptions}
           defaultValue={rest.default}
           placeholder={t('select')}
           onChange={handleSelectorValueChange}
@@ -88,23 +88,10 @@ const BasicSelector: FC<ItemLayoutProps<ChartStyleConfig>> = memo(
             );
           })}
         </Select>
-      </Wrapper>
+      </BW>
     );
   },
   itemLayoutComparer,
 );
 
 export default BasicSelector;
-
-const Wrapper = styled(BW)`
-  .ant-select {
-    color: ${p => p.theme.textColorSnd};
-  }
-
-  .ant-select:not(.ant-select-customize-input) .ant-select-selector {
-    background-color: ${p => p.theme.emphasisBackground};
-    border-color: ${p => p.theme.emphasisBackground} !important;
-    border-radius: ${BORDER_RADIUS};
-    box-shadow: none !important;
-  }
-`;

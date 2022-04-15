@@ -22,8 +22,9 @@ import { ChartDTO } from 'app/types/ChartDTO';
 import {
   mergeChartDataConfigs,
   mergeChartStyleConfigs,
+  transformHierarchyMeta,
+  transformMeta,
 } from 'app/utils/internalChartHelper';
-import { transformMeta } from 'app/utils/internalChartHelper';
 import { Omit } from 'utils/object';
 
 export function convertToChartDTO(data): ChartDTO {
@@ -32,6 +33,16 @@ export function convertToChartDTO(data): ChartDTO {
     view: {
       ...Omit(data?.view, ['model']),
       meta: transformMeta(data?.view?.model),
+    },
+  });
+}
+
+export function convertToChartDTO2(data): ChartDTO {
+  return Object.assign({}, data, {
+    config: JSON.parse(data?.config),
+    view: {
+      ...Omit(data?.view, ['model']),
+      meta: transformHierarchyMeta(data?.view?.model),
     },
   });
 }
@@ -63,12 +74,11 @@ export function buildUpdateChartRequest({
     viewId: viewId,
     config: stringifyConfig,
     permissions: [],
+    avatar: graphId,
   };
 }
 
-export function extractChartConfigValueModel(
-  config: ChartConfig,
-): ChartConfigDTO {
+function extractChartConfigValueModel(config: ChartConfig): ChartConfigDTO {
   return {
     datas: config?.datas,
     styles: getStyleValueModel(config?.styles),
@@ -82,6 +92,7 @@ function getStyleValueModel(styles?: ChartStyleConfig[]) {
       label: s.label,
       key: s.key,
       value: s.value,
+      comType: s.comType,
       rows: s.template ? s.rows : getStyleValueModel(s.rows),
     };
   });
@@ -90,9 +101,9 @@ function getStyleValueModel(styles?: ChartStyleConfig[]) {
 export function mergeToChartConfig(
   target?: ChartConfig,
   source?: ChartDetailConfigDTO,
-): ChartConfig {
+): ChartConfig | undefined {
   if (!target) {
-    return source! as any;
+    return undefined;
   }
   if (!source) {
     return target;

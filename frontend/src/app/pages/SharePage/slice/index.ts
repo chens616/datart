@@ -16,25 +16,24 @@
  * limitations under the License.
  */
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { ChartDataSectionType } from 'app/constants';
 import { migrateChartConfig } from 'app/migration';
-import ChartManager from 'app/pages/ChartWorkbenchPage/models/ChartManager';
+import ChartManager from 'app/models/ChartManager';
 import {
   FilterSearchParams,
   VizType,
 } from 'app/pages/MainPage/pages/VizPage/slice/types';
 import { transferChartConfig } from 'app/pages/MainPage/pages/VizPage/slice/utils';
-import { ChartConfig, ChartDataSectionType } from 'app/types/ChartConfig';
+import { ChartConfig } from 'app/types/ChartConfig';
 import { ChartDTO } from 'app/types/ChartDTO';
 import { mergeToChartConfig } from 'app/utils/ChartDtoHelper';
 import { useInjectReducer } from 'utils/@reduxjs/injectReducer';
-import { isMySliceRejectedAction } from 'utils/@reduxjs/toolkit';
-import { rejectedActionMessageHandler } from 'utils/notification';
 import { fetchShareDataSetByPreviewChartAction } from './thunks';
 // import { fetchShareDataSetByPreviewChartAction } from './thunk';
 import { ExecuteToken, SharePageState, ShareVizInfo } from './types';
 
 export const initialState: SharePageState = {
-  needPassword: false,
+  needVerify: false,
   vizType: undefined,
   shareToken: '',
   executeToken: '',
@@ -54,8 +53,8 @@ export const slice = createSlice({
       state.shareToken = action.payload.token;
       state.sharePassword = action.payload.pwd;
     },
-    saveNeedPassword: (state, action: PayloadAction<boolean>) => {
-      state.needPassword = action.payload;
+    saveNeedVerify: (state, action: PayloadAction<boolean>) => {
+      state.needVerify = action.payload;
     },
     setVizType: (state, action: PayloadAction<VizType | undefined>) => {
       state.vizType = action.payload;
@@ -107,7 +106,7 @@ export const slice = createSlice({
       const executeToken = data.executeToken;
       const executeKey = vizDetail?.viewId;
       if (executeKey) {
-        state.executeToken = executeToken?.[executeKey]?.token;
+        state.executeToken = executeToken?.[executeKey]?.authorizedToken;
       }
       state.chartPreview = {
         ...state.chartPreview,
@@ -157,11 +156,7 @@ export const slice = createSlice({
       )
       .addCase(fetchShareDataSetByPreviewChartAction.rejected, state => {
         state.headlessBrowserRenderSign = true;
-      })
-      .addMatcher(
-        isMySliceRejectedAction(slice.name),
-        rejectedActionMessageHandler,
-      );
+      });
   },
 });
 

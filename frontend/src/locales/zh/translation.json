@@ -2,6 +2,7 @@
   "global": {
     "copy": "副本",
     "tokenExpired": "会话过期，请重新登录",
+    "401": "未登录或会话过期，请重新登录",
     "title": {
       "action": "操作"
     },
@@ -17,7 +18,8 @@
       "close": "关闭",
       "saveAs": "另存为",
       "cancel": "取消",
-      "ok": "确定"
+      "ok": "确定",
+      "shortcuts": "快捷键"
     },
     "operation": {
       "archiveConfirm": "确定移至回收站？",
@@ -162,7 +164,12 @@
           "confirmPassword": "确定新密码"
         },
         "switchLanguage": {
-          "title": "切换语言"
+          "title": "语言"
+        },
+        "switchTheme": {
+          "title": "主题",
+          "light": "明亮",
+          "dark": "黑暗"
         },
         "logout": {
           "title": "退出登录"
@@ -303,7 +310,8 @@
           "PREFIX_NOT_LIKE": "前缀不包含",
           "SUFFIX_LIKE": "后缀包含",
           "SUFFIX_NOT_LIKE": "后缀不包含",
-          "BETWEEN": "区间",
+          "BETWEEN": "区间内",
+          "NOT_BETWEEN": "区间外",
           "IN": "包括",
           "NOT_IN": "不包括",
           "LT": "小于",
@@ -448,6 +456,7 @@
         "open": "开启",
         "close": "关闭",
         "cancel": "取消",
+        "downloadList": "下载列表",
         "lang": {
           "zh": "中文",
           "en": "英文"
@@ -500,7 +509,7 @@
             }
           }
         },
-        "conditionStyleTable": {
+        "conditionalStyleTable": {
           "btn": {
             "add": "新增",
             "edit": "编辑",
@@ -551,13 +560,56 @@
           "dotted": "点"
         },
         "nameLocation": {
+          "title": "标题位置",
           "start": "开始",
           "center": "中间",
           "end": "结束"
         },
         "legendType": {
+          "title": "图例类型",
           "plain": "普通",
           "scroll": "滚动"
+        },
+        "fontFamily": {
+          "default": "默认字体",
+          "microsoftYaHei": "微软雅黑",
+          "simSun": "宋体",
+          "simHei": "黑体",
+          "helveticaNeue": "Helvetica Neue",
+          "helvetica": "Helvetica",
+          "arial": "Arial",
+          "sansSerif": "sans-serif"
+        },
+        "fontWeight": {
+          "normal": "常规字号",
+          "bold": "粗体",
+          "bolder": "特粗体",
+          "lighter": "细体"
+        },
+        "fontStyle": {
+          "normal": "常规体",
+          "italic": "斜体",
+          "oblique": "偏斜体"
+        },
+        "lineHeight": {
+          "default": "默认行高"
+        },
+        "position": {
+          "title": "位置",
+          "auto": "自动",
+          "right": "右",
+          "left": "左",
+          "top": "上",
+          "bottom": "下",
+          "inside": "内",
+          "insideLeft": "内左",
+          "insideRight": "内右",
+          "insideTop": "内上",
+          "insideBottom": "内下",
+          "insideTopLeft": "内左上",
+          "insideBottomLeft": "内左下",
+          "insideTopRight": "内右上",
+          "insideBottomRight": "内右下"
         }
       },
       "data": {
@@ -574,6 +626,7 @@
         "size": "大小",
         "drop": "请拖拽数据字段到这里",
         "dropCount": "请至少拖拽{{count}}个数据字段到这里",
+        "drillable": "可钻取",
         "actions": {
           "sort": {
             "title": "排序",
@@ -658,11 +711,20 @@
           "endMetric": "结束关联指标",
           "font": "字体",
           "showLabel": "显示标签",
-          "position": "标签位置",
+          "position": {
+            "title": "标签位置",
+            "start": "开始",
+            "middle": "中间",
+            "end": "结尾"
+          },
           "lineStyle": "线条样式",
           "opacity": "透明度",
           "backgroundColor": "背景颜色",
-          "borderStyle": "边框样式"
+          "borderStyle": "边框样式",
+          "constant": "常量",
+          "avg": "平均值",
+          "max": "最大值",
+          "min": "最小值"
         },
         "paging": {
           "title": "常规",
@@ -712,11 +774,41 @@
         "ok": "确认",
         "cancel": "取消",
         "number": "序号",
-        "summary": "汇总"
+        "summary": "汇总",
+        "richText": {
+          "bold": "加粗",
+          "italic": "斜体",
+          "underline": "下划线",
+          "strike": "删除线",
+          "indent": "减少缩进",
+          "indentUp": "增加缩进",
+          "ordered": "有序列表",
+          "list": "无序列表",
+          "blockquote": "引用",
+          "codeBlock": "代码",
+          "link": "超链接",
+          "image": "图片",
+          "clean": "清除样式",
+          "more": "更多",
+          "families": "字体",
+          "fontSize": "字体大小",
+          "background": "背景颜色",
+          "color": "字体颜色",
+          "align": "对齐方式"
+        }
+      },
+      "drill": {
+        "showNextLevel": "显示下一层级",
+        "expandNextLevel": "展开下一层级",
+        "selectDrillStatus": "鼠标点击钻取状态",
+        "enable": "开启",
+        "disable": "关闭",
+        "rollUp": "上卷"
       }
     },
     "action": {
       "common": {
+        "downloadForExcel": "下载为 Excel",
         "confirm": "请确认",
         "ok": "确认",
         "cancel": "取消",
@@ -740,8 +832,36 @@
         "expireDate": "截止日期",
         "enablePassword": "启用密码",
         "generateLink": "生成链接",
-        "shareLink": "分享",
-        "downloadData": "下载为 Excel"
+        "shareLink": "分享管理",
+        "downloadData": "下载为 Excel",
+        "downloadPDF": "下载为 PDF",
+        "downloadPicture": "下载为 图片",
+        "NONE": "无",
+        "CODE": "口令",
+        "LOGIN": "登录",
+        "verificationMethod": "认证方式",
+        "dataPermission": "数据权限",
+        "loginUser": "登录者",
+        "shareUser": "分享者",
+        "userOrRole": "指定角色/成员",
+        "selectRole": "选择角色",
+        "selectUser": "选择成员",
+        "save": "保存"
+      },
+      "shareList": {
+        "shareList": "分享链接列表",
+        "shortLink": "短链接",
+        "type": "类型",
+        "expireDate": "过期时间",
+        "operate": "操作",
+        "copy": "复制链接",
+        "copySuccess": "复制成功",
+        "delete": "删除",
+        "addLink": "添加链接",
+        "deleteError": "删除失败",
+        "sureDelete": "确定要删除吗？",
+        "noDataTip": "暂无链接，点击右上角添加",
+        "Permanent": "永久"
       }
     },
     "board": {
@@ -767,7 +887,10 @@
         "delete": "删除",
         "copy": "复制",
         "paste": "粘贴",
-        "deviceSwitch": "设备切换"
+        "deviceSwitch": "设备切换",
+        "allowOverlap": "允许组件重叠",
+        "forbidOverlap": "禁止组件重叠",
+        "multiSelect": "多选"
       },
       "controlTypes": {
         "common": "常规",
@@ -820,7 +943,8 @@
         "autoPlay": "自动播放",
         "duration": "停留时间(秒)",
         "delPagesTip": "确认删除所有选中的故事页",
-        "delPageTip": "确认删除此故事页？"
+        "delPageTip": "确认删除此故事页？",
+        "enterHere": "请输入"
       }
     },
     "widget": {
@@ -847,6 +971,7 @@
       "action": {
         "refresh": "同步数据",
         "fullScreen": "全屏",
+        "lock": "锁定拖拽",
         "edit": "编辑",
         "delete": "删除",
         "confirmDel": "确认删除",
@@ -856,6 +981,12 @@
         "closeLinkage": "关闭联动",
         "makeJump": "跳转设置",
         "closeJump": "关闭跳转"
+      },
+      "tips": {
+        "unlock": "已锁定拖拽,点击解锁",
+        "waiting": "等待加载",
+        "cancelLinkage": "取消联动",
+        "canLinkage": "点击图表可联动"
       }
     },
     "linkage": {
@@ -864,7 +995,8 @@
       "associatedWidgets": "关联组件",
       "associatedFields": "关联字段",
       "selectTriggers": "选择触发字段",
-      "selectLinker": "选择联动字段"
+      "selectLinker": "选择联动字段",
+      "linkageError": "联动的图表已经被删除，请重新配置"
     },
     "jump": {
       "title": "跳转设置",
@@ -874,7 +1006,8 @@
       "URL": "URL",
       "parameters": "Parameters",
       "controller": "关联控制器",
-      "associatedFields": "关联字段"
+      "associatedFields": "关联字段",
+      "jumpError": "跳转的目标已失效或被删除，请重新配置"
     },
     "associate": {
       "title": "关联字段/变量",
@@ -953,9 +1086,10 @@
       "description": "描述",
       "boardType": {
         "label": "布局类型",
-        "auto": "自动",
-        "free": "自由",
-        "tips": "自动布局 :方便快速创建响应式仪表板  自由布局 :创建精美大屏类数字应用",
+        "auto": "自动布局",
+        "free": "自由布局",
+        "autoTips": "自动布局：流式布局，可适配多终端",
+        "freeTips": "自由布局：固定布局，用于制作大屏",
         "requiredMessage": "请选择一种布局方式"
       },
       "parent": "所属目录",
@@ -980,6 +1114,7 @@
     "resultEmpty1": "请点击 ",
     "resultEmpty2": " 按钮执行，运行结果将在此处展示",
     "errorTitle": "执行错误",
+    "sqlRequired": "SQL 语句不能为空",
     "sqlRunWraning": "SQL 解析失败，欢迎一键提交 issue 帮助我们优化。",
     "detail": "查看详情",
     "warningDescription": "Datart 默认使用 calcite 解析 SQL 语句；calcite 拥有的非常棒的语法解析器，但依然做不到解析所有数据库的所有语法。当发生解析异常时，datart 对 SQL 语句进行必要的处理之后仍然会发送到数据库执行，如果可以执行成功，我们会认为解析器需要针对该条 SQL 语句的语法进行优化。在这种情况下，datart 会显示该警告信息，方便用户将解析异常的语句提交到 github 或 gitee issue，帮助我们优化解析器。",
@@ -1010,6 +1145,7 @@
     "properties": {
       "reference": "数据源信息",
       "variable": "变量配置",
+      "model": "数据模型",
       "columnPermissions": "列权限"
     },
     "resource": {
@@ -1022,6 +1158,16 @@
       "add": "新建变量",
       "prefix": "[公共]",
       "suffix": "重复"
+    },
+    "model": {
+      "category": "分类",
+      "rename": "重命名",
+      "delete": "删除",
+      "typeAndCategory": "类型与分类",
+      "permission": "列权限",
+      "newHierarchy": "新建层次结构",
+      "addToHierarchy": "添加到层次结构",
+      "hierarchyName": "层级名称"
     },
     "columnPermission": {
       "title": "列权限",
@@ -1066,6 +1212,9 @@
     "archived": "已归档",
     "noPermission": "您没有权限访问该页面",
     "creatView": "去新建数据视图",
+    "syncDatabase": "同步数据库模式",
+    "syncDatabaseSchemaSuccess": "已成功获取数据库模式",
+    "lastUpdateTime": "最近同步时间",
     "sidebar": {
       "title": "数据源列表",
       "add": "新建数据源",
@@ -1116,6 +1265,7 @@
       "remove": "移除"
     },
     "form": {
+      "email": "邮箱",
       "search": "请搜索或粘贴被邀请成员邮箱",
       "needConfirm": "需要被邀请成员邮件确认"
     },

@@ -49,6 +49,7 @@ export const getBoardDetail = createAsyncThunk<
     dashboardRelId: string;
     filterSearchParams?: FilterSearchParams;
     vizToken?: ExecuteToken;
+    shareToken?: string;
   }
 >(
   'board/getBoardDetail',
@@ -74,19 +75,23 @@ export const getBoardDetail = createAsyncThunk<
 
 export const fetchBoardDetail = createAsyncThunk<
   null,
-  { dashboardRelId: string; filterSearchParams?: FilterSearchParams }
+  {
+    dashboardRelId: string;
+    filterSearchParams?: FilterSearchParams;
+  }
 >('board/fetchBoardDetail', async (params, { dispatch, rejectWithValue }) => {
   const { data } = await request2<ServerDashboard>(
     `/viz/dashboards/${params?.dashboardRelId}`,
   );
 
-  await dispatch(
+  dispatch(
     handleServerBoardAction({
       data,
       renderMode: 'read',
       filterSearchMap: { params: params?.filterSearchParams },
     }),
   );
+
   return null;
 });
 
@@ -96,17 +101,17 @@ export const fetchBoardDetailInShare = createAsyncThunk<
     dashboardRelId: string;
     vizToken: ExecuteToken;
     filterSearchParams?: FilterSearchParams;
+    shareToken?: string;
   }
 >(
   'board/fetchBoardDetailInShare',
   async (params, { dispatch, rejectWithValue }) => {
-    const { vizToken } = params;
+    const { vizToken, shareToken } = params;
     const { data } = await request2<ShareVizInfo>({
-      url: '/share/viz',
-      method: 'GET',
-      params: {
-        shareToken: vizToken.token,
-        password: vizToken.password,
+      url: `shares/${shareToken}/viz`,
+      method: 'POST',
+      data: {
+        authorizedToken: vizToken.authorizedToken,
       },
     });
     dispatch(
@@ -137,8 +142,8 @@ export const renderedWidgetAsync = createAsyncThunk<
   'board/renderedWidgetAsync',
   async ({ boardId, widgetId, renderMode }, { getState, dispatch }) => {
     const widgetMapMap = selectBoardWidgetMap(getState());
-    const widgetMap = widgetMapMap[boardId];
-    const curWidget = widgetMap[widgetId];
+    const widgetMap = widgetMapMap?.[boardId];
+    const curWidget = widgetMap?.[widgetId];
     if (!curWidget) return null;
     // 1 widget render
     dispatch(boardActions.renderedWidgets({ boardId, widgetIds: [widgetId] }));
@@ -252,15 +257,15 @@ export const getChartWidgetDataAsync = createAsyncThunk<
       } else {
         const executeTokenMap = (getState() as RootState)?.share
           ?.executeTokenMap;
+
         const dataChart = dataChartMap[curWidget.datachartId];
         const viewId = viewMap[dataChart.viewId].id;
         const executeToken = executeTokenMap?.[viewId];
         const { data } = await request2<WidgetData>({
           method: 'POST',
-          url: `share/execute`,
+          url: `shares/execute`,
           params: {
-            executeToken: executeToken?.token,
-            password: executeToken?.password,
+            executeToken: executeToken?.authorizedToken,
           },
           data: requestParams,
         });
@@ -283,6 +288,7 @@ export const getChartWidgetDataAsync = createAsyncThunk<
           boardId,
           widgetId,
           errInfo: undefined,
+          errorType: 'request',
         }),
       );
     } catch (error) {
@@ -291,6 +297,7 @@ export const getChartWidgetDataAsync = createAsyncThunk<
           boardId,
           widgetId,
           errInfo: getErrorMessage(error),
+          errorType: 'request',
         }),
       );
 
@@ -360,10 +367,9 @@ export const getControllerOptions = createAsyncThunk<
       if (executeToken && renderMode !== 'read') {
         const { data } = await request2<ChartDataSetDTO>({
           method: 'POST',
-          url: `share/execute`,
+          url: `shares/execute`,
           params: {
-            executeToken: executeToken?.token,
-            password: executeToken?.password,
+            executeToken: executeToken?.authorizedToken,
           },
           data: requestParams,
         });
@@ -386,6 +392,7 @@ export const getControllerOptions = createAsyncThunk<
           boardId,
           widgetId,
           errInfo: undefined,
+          errorType: 'request',
         }),
       );
     } catch (error) {
@@ -394,6 +401,7 @@ export const getControllerOptions = createAsyncThunk<
           boardId,
           widgetId,
           errInfo: getErrorMessage(error),
+          errorType: 'request',
         }),
       );
     }

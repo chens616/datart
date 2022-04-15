@@ -16,21 +16,22 @@
  * limitations under the License.
  */
 
-import React, { FC, useContext } from 'react';
+import { WidgetData } from 'app/pages/DashBoardPage/pages/Board/slice/types';
+import { createContext, FC, memo } from 'react';
 import { useSelector } from 'react-redux';
-import { BoardContext } from '../../contexts/BoardContext';
-import { WidgetDataContext } from '../../contexts/WidgetDataContext';
 import { selectWidgetDataById } from '../../pages/Board/slice/selector';
 import { BoardState } from '../../pages/Board/slice/types';
 import { selectEditWidgetData } from '../../pages/BoardEditor/slice/selectors';
 import { EditBoardState } from '../../pages/BoardEditor/slice/types';
 
-export const WidgetDataProvider: FC<{ widgetId: string }> = ({
-  widgetId,
-  children,
-}) => {
-  const { editing, boardId } = useContext(BoardContext);
-
+export const WidgetDataContext = createContext<{ data: WidgetData }>({
+  data: { id: '', columns: [], rows: [] } as WidgetData,
+});
+export const WidgetDataProvider: FC<{
+  boardId: string;
+  boardEditing: boolean;
+  widgetId: string;
+}> = memo(({ boardId, boardEditing, widgetId, children }) => {
   // 浏览模式
   const viewWidgetData = useSelector((state: { board: BoardState }) =>
     selectWidgetDataById(state, widgetId),
@@ -39,10 +40,10 @@ export const WidgetDataProvider: FC<{ widgetId: string }> = ({
   const editWidgetData = useSelector((state: { editBoard: EditBoardState }) =>
     selectEditWidgetData(state, widgetId),
   );
-  const widgetData = editing ? editWidgetData : viewWidgetData;
+  const widgetData = boardEditing ? editWidgetData : viewWidgetData;
   return (
     <WidgetDataContext.Provider value={{ data: widgetData }}>
       {boardId ? children : null}
     </WidgetDataContext.Provider>
   );
-};
+});

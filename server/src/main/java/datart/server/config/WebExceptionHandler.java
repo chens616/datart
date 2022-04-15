@@ -19,12 +19,11 @@
 package datart.server.config;
 
 import datart.core.common.MessageResolver;
+import datart.core.common.RequestContext;
+import datart.core.data.provider.Dataframe;
 import datart.security.exception.AuthException;
-import datart.security.exception.PermissionDeniedException;
 import datart.server.base.dto.ResponseData;
-import datart.core.base.exception.NotFoundException;
-import datart.core.base.exception.ParamException;
-import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.BindException;
@@ -41,36 +40,13 @@ public class WebExceptionHandler {
 
     @ResponseBody
     @ResponseStatus(code = HttpStatus.UNAUTHORIZED)
-    @ExceptionHandler(ExpiredJwtException.class)
-    public ResponseData<String> exceptionHandler(ExpiredJwtException e) {
+    @ExceptionHandler(JwtException.class)
+    public ResponseData<String> exceptionHandler(JwtException e) {
         ResponseData.ResponseDataBuilder<String> builder = ResponseData.builder();
         return builder.success(false)
                 .message(MessageResolver.getMessage("login.session.timeout"))
                 .exception(e)
                 .build();
-    }
-
-    @ResponseBody
-    @ResponseStatus(code = HttpStatus.BAD_REQUEST)
-    @ExceptionHandler(ParamException.class)
-    public ResponseData<String> exceptionHandler(ParamException e) {
-        ResponseData.ResponseDataBuilder<String> builder = ResponseData.builder();
-        return builder.success(false)
-                .message(e.getMessage())
-                .errCode(e.getErrCode())
-                .exception(e)
-                .build();
-    }
-
-    @ResponseBody
-    @ResponseStatus(code = HttpStatus.BAD_REQUEST)
-    @ExceptionHandler(NotFoundException.class)
-    public ResponseData<String> exceptionHandler(NotFoundException e) {
-        ResponseData.ResponseDataBuilder<String> builder = ResponseData.builder();
-        return builder.success(false)
-                .message(e.getMessage())
-                .errCode(e.getErrCode())
-                .exception(e).build();
     }
 
     @ResponseBody
@@ -86,16 +62,6 @@ public class WebExceptionHandler {
 
     @ResponseBody
     @ResponseStatus(code = HttpStatus.BAD_REQUEST)
-    @ExceptionHandler(PermissionDeniedException.class)
-    public ResponseData<String> exceptionHandler(PermissionDeniedException e) {
-        ResponseData.ResponseDataBuilder<String> builder = ResponseData.builder();
-        return builder.success(false)
-                .message(e.getMessage())
-                .exception(e).build();
-    }
-
-    @ResponseBody
-    @ResponseStatus(code = HttpStatus.BAD_REQUEST)
     @ExceptionHandler(BindException.class)
     public ResponseData<String> validateException(BindException e) {
         ResponseData.ResponseDataBuilder<String> builder = ResponseData.builder();
@@ -103,14 +69,22 @@ public class WebExceptionHandler {
                 .message(e.getBindingResult().getFieldErrors().stream()
                         .map(error -> error.getField() + ":" + error.getDefaultMessage())
                         .collect(Collectors.toList()).toString())
-                .exception(e)
                 .build();
     }
 
     @ResponseBody
     @ResponseStatus(code = HttpStatus.BAD_REQUEST)
     @ExceptionHandler(Exception.class)
-    public ResponseData<String> exceptionHandler(Exception e) {
+    public ResponseData<Object> exceptionHandler(Exception e) {
+        Object data = null;
+        if (RequestContext.getScriptPermission() != null) {
+            Dataframe df = Dataframe.empty();
+            if (RequestContext.getScriptPermission()) {
+                df.setScript(RequestContext.getSql());
+            }
+            data = df;
+        }
+
         String msg = null;
         msg = e.getMessage();
         if (msg == null) {
@@ -120,9 +94,10 @@ public class WebExceptionHandler {
             }
         }
         log.error(msg, e);
-        ResponseData.ResponseDataBuilder<String> builder = ResponseData.builder();
+        ResponseData.ResponseDataBuilder<Object> builder = ResponseData.builder();
         return builder.success(false)
                 .message(msg)
+                .data(data)
                 .exception(e)
                 .build();
     }

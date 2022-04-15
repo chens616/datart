@@ -18,8 +18,9 @@
 import useResizeObserver from 'app/hooks/useResizeObserver';
 import { useContext, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
-import { BoardContext } from '../contexts/BoardContext';
+import { BoardContext } from '../components/BoardProvider/BoardProvider';
 import { boardActions } from '../pages/Board/slice';
+
 export default function useBoardWidthHeight() {
   const { boardId, renderMode } = useContext(BoardContext);
 
@@ -33,15 +34,16 @@ export default function useBoardWidthHeight() {
     refreshMode: 'debounce',
     refreshRate: 100,
   });
+
   useEffect(() => {
     const width = gridWidth;
     const height = gridHeight;
-    // TODO in only in  scheduleJob
-    if (renderMode === 'schedule') {
+    // TODO in only in  renderMode
+    if (renderMode !== 'edit') {
       dispatch(
         boardActions.setBoardWidthHeight({ boardId, wh: [width, height] }),
       );
     }
-  }, [gridHeight, renderMode, dispatch, boardId, gridWidth]);
+  }, [gridHeight, dispatch, boardId, gridWidth, renderMode]);
   return { gridRef };
 }

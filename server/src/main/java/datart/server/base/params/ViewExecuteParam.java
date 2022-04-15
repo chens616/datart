@@ -20,6 +20,7 @@ package datart.server.base.params;
 
 import datart.core.base.PageInfo;
 import datart.core.data.provider.sql.*;
+import datart.security.base.ResourceType;
 import lombok.Data;
 import org.springframework.util.CollectionUtils;
 
@@ -33,6 +34,8 @@ public class ViewExecuteParam {
     private String vizId;
 
     private String vizName;
+
+    private ResourceType vizType;
 
     private String viewId;
 
@@ -64,15 +67,12 @@ public class ViewExecuteParam {
 
     private boolean script;
 
+    private boolean analytics;
+
     public boolean isEmpty() {
         return CollectionUtils.isEmpty(columns)
-                && CollectionUtils.isEmpty(keywords)
-                && CollectionUtils.isEmpty(params)
-                && CollectionUtils.isEmpty(functionColumns)
                 && CollectionUtils.isEmpty(aggregators)
-                && CollectionUtils.isEmpty(filters)
-                && CollectionUtils.isEmpty(groups)
-                && CollectionUtils.isEmpty(orders);
+                && CollectionUtils.isEmpty(groups);
     }
 
 }

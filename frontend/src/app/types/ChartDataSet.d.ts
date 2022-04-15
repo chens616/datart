@@ -22,6 +22,8 @@ import { ChartDataConfig, ChartDataSectionField } from './ChartConfig';
 export interface IChartDataSetRow<T> extends Array<T> {
   getCell(field: ChartDataSectionField): T;
 
+  getMultiCell(...fields: ChartDataSectionField[]): string;
+
   getCellByKey(key: string): T;
 
   getFieldKey(field: ChartDataSectionField): string;
@@ -29,14 +31,22 @@ export interface IChartDataSetRow<T> extends Array<T> {
   getFieldIndex(field: ChartDataSectionField): number;
 
   convertToObject(): object;
+
+  convertToCaseSensitiveObject(): object;
 }
 
 export interface IChartDataSet<T> extends Array<IChartDataSetRow<T>> {
   getFieldKey(field: ChartDataSectionField): string;
 
+  getFieldOriginKey(field: ChartDataSectionField): string;
+
   getFieldIndex(field: ChartDataSectionField): number;
 
   sortBy(dataConfigs: ChartDataConfig[]): void;
+
+  groupBy(field: ChartDataSectionField): {
+    [groupKey in string]: IChartDataSetRow<T>[];
+  };
 }
 
 export type ChartDataSetDTO = {

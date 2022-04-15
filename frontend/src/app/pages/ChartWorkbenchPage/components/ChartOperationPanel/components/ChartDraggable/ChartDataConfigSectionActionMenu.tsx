@@ -18,18 +18,18 @@
 
 import { Menu } from 'antd';
 import SubMenu from 'antd/lib/menu/SubMenu';
-import useI18NPrefix from 'app/hooks/useI18NPrefix';
 import {
-  ChartDataSectionField,
   ChartDataSectionFieldActionType,
-} from 'app/types/ChartConfig';
+  ChartDataViewFieldCategory,
+} from 'app/constants';
+import useI18NPrefix from 'app/hooks/useI18NPrefix';
+import { ChartDataSectionField } from 'app/types/ChartConfig';
 import { ChartDataConfigSectionProps } from 'app/types/ChartDataConfigSection';
-import { ChartDataViewFieldCategory } from 'app/types/ChartDataView';
-import { updateBy } from 'app/utils/mutation';
 import { FC } from 'react';
 import AggregationAction from '../ChartFieldAction/AggregationAction';
 import AggregationLimitAction from '../ChartFieldAction/AggregationLimitAction';
 import SortAction from '../ChartFieldAction/SortAction';
+import { updateDataConfigByField } from './utils';
 
 const ChartDataConfigSectionActionMenu: FC<
   {
@@ -62,12 +62,7 @@ const ChartDataConfigSectionActionMenu: FC<
     if (!fieldConfig) {
       return;
     }
-    const newConfig = updateBy(config, draft => {
-      const index = (draft.rows || []).findIndex(r => r.uid === columnUid);
-      if (index !== -1 && fieldConfig) {
-        (draft.rows || [])[index] = fieldConfig;
-      }
-    });
+    const newConfig = updateDataConfigByField(columnUid, config, fieldConfig);
     onConfigChanged?.(ancestors, newConfig, needRefresh);
   };
 
@@ -103,7 +98,10 @@ const ChartDataConfigSectionActionMenu: FC<
   };
 
   const getSubMenuActionComponent = (actionName, uid) => {
-    const fieldConfig = config.rows?.find(c => c.uid === uid)!;
+    const fieldConfig = config.rows?.find(c => c.uid === uid);
+    if (!fieldConfig) {
+      return;
+    }
     const options = config?.options?.[actionName];
     if (actionName === ChartDataSectionFieldActionType.Sortable) {
       return (

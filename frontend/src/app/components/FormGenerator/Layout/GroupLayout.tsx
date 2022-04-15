@@ -21,14 +21,11 @@ import useStateModal, { StateModalSize } from 'app/hooks/useStateModal';
 import { ChartStyleConfig } from 'app/types/ChartConfig';
 import { FC, memo, useState } from 'react';
 import styled from 'styled-components/macro';
-import { BORDER_RADIUS, SPACE_MD } from 'styles/StyleConstants';
-import CollapseHeader from '../CollapseHeader';
-import {
-  FormGeneratorLayoutProps,
-  GroupLayoutMode,
-  ItemComponentType,
-} from '../types';
+import { SPACE_MD } from 'styles/StyleConstants';
+import { FormGroupLayoutMode, FormItemComponentType } from '../constants';
+import { FormGeneratorLayoutProps } from '../types';
 import { groupLayoutComparer } from '../utils';
+import CollapseHeader from './CollapseHeader';
 import CollectionLayout from './CollectionLayout';
 
 const { Panel } = Collapse;
@@ -37,7 +34,7 @@ const GroupLayout: FC<FormGeneratorLayoutProps<ChartStyleConfig>> = memo(
   ({
     ancestors,
     data,
-    mode = 'outter',
+    mode = FormGroupLayoutMode.OUTER,
     translate: t = title => title,
     dataConfigs,
     flatten,
@@ -51,7 +48,7 @@ const GroupLayout: FC<FormGeneratorLayoutProps<ChartStyleConfig>> = memo(
     );
     const [expand] = useState(!!data?.options?.expand);
 
-    const handleConfrimModalDialogOrDataUpdate = (
+    const handleConfirmModalDialogOrDataUpdate = (
       ancestors,
       data,
       needRefresh,
@@ -62,7 +59,7 @@ const GroupLayout: FC<FormGeneratorLayoutProps<ChartStyleConfig>> = memo(
     const handleOpenStateModal = () => {
       return (openStateModal as Function)({
         modalSize,
-        onOk: handleConfrimModalDialogOrDataUpdate,
+        onOk: handleConfirmModalDialogOrDataUpdate,
         content: onChangeEvent => {
           return renderCollectionComponents(data, onChangeEvent);
         },
@@ -70,23 +67,24 @@ const GroupLayout: FC<FormGeneratorLayoutProps<ChartStyleConfig>> = memo(
     };
 
     const renderGroupByMode = (mode, comType, data) => {
-      if (mode === GroupLayoutMode.INNER) {
+      if (mode === FormGroupLayoutMode.INNER) {
         return renderCollectionComponents(
           data,
-          handleConfrimModalDialogOrDataUpdate,
+          handleConfirmModalDialogOrDataUpdate,
         );
       }
-      if (comType === ItemComponentType.MODAL) {
+      if (comType === FormItemComponentType.MODAL) {
         return (
           <>
-            <StyledShowModalButton
+            <Button
+              className="datart-modal-button"
               type="ghost"
               block={true}
               title={t(data.label, true)}
               onClick={handleOpenStateModal}
             >
               <CollapseHeader title={t(data.label, true)} />
-            </StyledShowModalButton>
+            </Button>
             {contextHolder}
           </>
         );
@@ -103,7 +101,7 @@ const GroupLayout: FC<FormGeneratorLayoutProps<ChartStyleConfig>> = memo(
           >
             {renderCollectionComponents(
               data,
-              handleConfrimModalDialogOrDataUpdate,
+              handleConfirmModalDialogOrDataUpdate,
             )}
           </Panel>
         </Collapse>
@@ -125,7 +123,10 @@ const GroupLayout: FC<FormGeneratorLayoutProps<ChartStyleConfig>> = memo(
     };
 
     return (
-      <StyledGroupLayout flatten={flatten}>
+      <StyledGroupLayout
+        className="chart-config-group-layout"
+        flatten={flatten}
+      >
         {renderGroupByMode(mode, type, data)}
       </StyledGroupLayout>
     );
@@ -137,17 +138,4 @@ export default GroupLayout;
 
 const StyledGroupLayout = styled.div<{ flatten?: boolean }>`
   padding: 0 ${p => (p.flatten ? 0 : SPACE_MD)};
-`;
-
-const StyledShowModalButton = styled(Button)`
-  color: ${p => p.theme.textColorSnd};
-  background-color: ${p => p.theme.bodyBackground};
-  border: 0;
-  border-radius: ${BORDER_RADIUS};
-
-  &:hover,
-  &:active {
-    color: ${p => p.theme.textColorSnd};
-    background-color: ${p => p.theme.emphasisBackground};
-  }
 `;

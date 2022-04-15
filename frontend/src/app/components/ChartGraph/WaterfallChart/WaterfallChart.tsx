@@ -16,19 +16,36 @@
  * limitations under the License.
  */
 
-import { ChartConfig, ChartDataSectionType } from 'app/types/ChartConfig';
+import { ChartDataSectionType } from 'app/constants';
+import {
+  ChartConfig,
+  ChartDataSectionField,
+  ChartStyleConfig,
+  IFieldFormatConfig,
+  LabelStyle,
+  XAxis,
+  XAxisColumns,
+  YAxis,
+} from 'app/types/ChartConfig';
 import ChartDataSetDTO, { IChartDataSet } from 'app/types/ChartDataSet';
 import {
   getColumnRenderName,
   getGridStyle,
   getStyles,
+  hadAxisLabelOverflowConfig,
+  setOptionsByAxisLabelOverflow,
   toFormattedValue,
   transformToDataSet,
 } from 'app/utils/chartHelper';
 import { init } from 'echarts';
 import { UniqArray } from 'utils/object';
-import Chart from '../models/Chart';
+import Chart from '../../../models/Chart';
 import Config from './config';
+import {
+  OrderConfig,
+  WaterfallBorderStyle,
+  WaterfallDataListConfig,
+} from './types';
 
 class WaterfallChart extends Chart {
   config = Config;
@@ -77,10 +94,11 @@ class WaterfallChart extends Chart {
 
   onResize(opt: any, context): void {
     this.chart?.resize({ width: context?.width, height: context?.height });
+    hadAxisLabelOverflowConfig(this.chart?.getOption()) && this.onUpdated(opt);
   }
 
   private getOptions(dataset: ChartDataSetDTO, config: ChartConfig) {
-    const styleConfigs = config.styles;
+    const styleConfigs = config.styles || [];
     const dataConfigs = config.datas || [];
     const groupConfigs = dataConfigs
       .filter(c => c.type === ChartDataSectionType.GROUP)
@@ -103,29 +121,28 @@ class WaterfallChart extends Chart {
     );
 
     return {
-      grid: getGridStyle(styleConfigs),
       barWidth: this.getSerieBarWidth(styleConfigs),
       ...series,
     };
   }
 
-  private getSerieBarWidth(styles) {
+  private getSerieBarWidth(styles: ChartStyleConfig[]): number {
     const [width] = getStyles(styles, ['bar'], ['width']);
     return width;
   }
 
   private getSeries(
-    styles,
+    styles: ChartStyleConfig[],
     chartDataSet: IChartDataSet<string>,
-    aggregateConfigs,
-    group,
+    aggregateConfigs: ChartDataSectionField[],
+    group: ChartDataSectionField[],
   ) {
-    const xAxisColumns = {
+    const xAxisColumns: XAxisColumns = {
       type: 'category',
       tooltip: { show: true },
       data: UniqArray(chartDataSet.map(dc => dc.getCell(group[0]))),
     };
-    const yAxisNames = aggregateConfigs.map(getColumnRenderName);
+    const yAxisNames: string[] = aggregateConfigs.map(getColumnRenderName);
     const [isIncrement, ascendColor, descendColor] = getStyles(
       styles,
       ['bar'],
@@ -189,6 +206,16 @@ class WaterfallChart extends Chart {
       xAxis: this.getXAxis(styles, xAxisColumns),
       yAxis: this.getYAxis(styles, yAxisNames),
     };
+
+    // @TM 溢出自动根据bar长度设置标尺
+    const option = setOptionsByAxisLabelOverflow({
+      chart: this.chart,
+      xAxis: axisInfo.xAxis,
+      yAxis: axisInfo.yAxis,
+      grid: getGridStyle(styles),
+      series: [baseDataObj, ascendOrderObj, descendOrderObj],
+      yAxisNames,
+    });
     return {
       tooltip: {
         trigger: 'axis',
@@ -215,13 +242,11 @@ class WaterfallChart extends Chart {
           }
         },
       },
-      xAxis: axisInfo.xAxis,
-      yAxis: axisInfo.yAxis,
-      series: [baseDataObj, ascendOrderObj, descendOrderObj],
+      ...option,
     };
   }
 
-  private getSeriesItemStyle(styles) {
+  private getSeriesItemStyle(styles: ChartStyleConfig[]): WaterfallBorderStyle {
     const [borderStyle, borderRadius] = getStyles(
       styles,
       ['bar'],
@@ -235,30 +260,35 @@ class WaterfallChart extends Chart {
     };
   }
 
-  private getDataList(isIncrement, dataList, xAxisColumns, styles) {
+  private getDataList(
+    isIncrement: boolean,
+    dataList: string[],
+    xAxisColumns: XAxisColumns,
+    styles: ChartStyleConfig[],
+  ): WaterfallDataListConfig {
     const [totalColor] = getStyles(styles, ['bar'], ['totalColor']);
-    const baseData: any = [];
-    const ascendOrder: any = [];
-    const descendOrder: any = [];
+    const baseData: Array<number | string> = [];
+    const ascendOrder: OrderConfig[] = [];
+    const descendOrder: OrderConfig[] = [];
     dataList.forEach((data, index) => {
-      data = parseFloat(data);
+      const newData: number = parseFloat(data);
       if (index > 0) {
         if (isIncrement) {
-          const result =
-            dataList[index - 1] >= 0
+          const result: number | string =
+            Number(dataList[index - 1]) >= 0
               ? parseFloat(dataList[index - 1] + baseData[index - 1])
               : baseData[index - 1];
-          if (data >= 0) {
+          if (newData >= 0) {
             baseData.push(result);
-            ascendOrder.push(data);
+            ascendOrder.push(newData);
             descendOrder.push('-');
           } else {
-            baseData.push(result + data);
+            baseData.push(Number(result) + newData);
             ascendOrder.push('-');
-            descendOrder.push(Math.abs(data));
+            descendOrder.push(Math.abs(newData));
           }
         } else {
-          const result = data - parseFloat(dataList[index - 1]);
+          const result = Number(data) - parseFloat(dataList[index - 1]);
           if (result >= 0) {
             ascendOrder.push(result);
             descendOrder.push('-');
@@ -270,13 +300,13 @@ class WaterfallChart extends Chart {
           }
         }
       } else {
-        if (data >= 0) {
-          ascendOrder.push(data);
+        if (newData >= 0) {
+          ascendOrder.push(newData);
           descendOrder.push('-');
           baseData.push(0);
         } else {
           ascendOrder.push('-');
-          descendOrder.push(Math.abs(data));
+          descendOrder.push(Math.abs(newData));
           baseData.push(0);
         }
       }
@@ -311,7 +341,10 @@ class WaterfallChart extends Chart {
     };
   }
 
-  private getLabel(styles, format) {
+  private getLabel(
+    styles: ChartStyleConfig[],
+    format: IFieldFormatConfig | undefined,
+  ): LabelStyle {
     const [show, position, font] = getStyles(
       styles,
       ['label'],
@@ -325,7 +358,10 @@ class WaterfallChart extends Chart {
     };
   }
 
-  private getXAxis(styles, xAxisColumns) {
+  private getXAxis(
+    styles: ChartStyleConfig[],
+    xAxisColumns: XAxisColumns,
+  ): XAxis {
     const [
       showAxis,
       inverse,
@@ -335,6 +371,7 @@ class WaterfallChart extends Chart {
       rotate,
       showInterval,
       interval,
+      overflow,
     ] = getStyles(
       styles,
       ['xAxis'],
@@ -347,6 +384,7 @@ class WaterfallChart extends Chart {
         'rotate',
         'showInterval',
         'interval',
+        'overflow',
       ],
     );
     const [showVerticalLine, verticalLineStyle] = getStyles(
@@ -362,6 +400,7 @@ class WaterfallChart extends Chart {
         show: showLabel,
         rotate,
         interval: showInterval ? interval : 'auto',
+        overflow,
         ...font,
       },
       axisLine: {
@@ -379,7 +418,7 @@ class WaterfallChart extends Chart {
     };
   }
 
-  private getYAxis(styles, yAxisNames) {
+  private getYAxis(styles: ChartStyleConfig[], yAxisNames: string[]): YAxis {
     const [
       showAxis,
       inverse,

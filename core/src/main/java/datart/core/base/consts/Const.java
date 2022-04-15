@@ -31,6 +31,8 @@ public class Const {
 
     public static final String DEFAULT_DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
 
+    public static final String FILE_SUFFIX_DATE_FORMAT = "yyyy-MM-dd_HH-mm-ss-SSS";
+
     // 数据库schema最短同步时间间隔
     public static final Integer MINIMUM_SYNC_INTERVAL = 60;
 
@@ -57,8 +59,7 @@ public class Const {
     /**
      * 权限变量
      */
-//    //管理员权限，拥有所有数据的权限
-//    public static final String ALL_PERMISSION = "@ALL_PERMISSION@";
+    public static final String ALL_PERMISSION = "@DATART_ALL_PERMISSION@";
 
     /**
      * Token Key
@@ -98,5 +99,7 @@ public class Const {
 
 
     public static final String ENCRYPT_FLAG = "_encrypted_";
+
+    public static final String USER_DEFAULT_PSW = "123456";
 
 }

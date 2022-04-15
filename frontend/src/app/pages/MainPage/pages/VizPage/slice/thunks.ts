@@ -17,7 +17,7 @@
  */
 
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { ChartDataRequestBuilder } from 'app/pages/ChartWorkbenchPage/models/ChartDataRequestBuilder';
+import { ChartDataRequestBuilder } from 'app/models/ChartDataRequestBuilder';
 import {
   Dashboard,
   DataChart,
@@ -25,6 +25,7 @@ import {
 import { selectOrgId } from 'app/pages/MainPage/slice/selectors';
 import { getLoggedInUserPermissions } from 'app/pages/MainPage/slice/thunks';
 import { StoryBoard } from 'app/pages/StoryBoardPage/slice/types';
+import { IChartDrillOption } from 'app/types/ChartDrillOption';
 import { ChartDTO } from 'app/types/ChartDTO';
 import { convertToChartDTO } from 'app/utils/ChartDtoHelper';
 import { filterSqlOperatorName } from 'app/utils/internalChartHelper';
@@ -275,6 +276,7 @@ export const fetchDataSetByPreviewChartAction = createAsyncThunk(
       backendChartId: string;
       pageInfo?;
       sorter?: { column: string; operator: string; aggOperator?: string };
+      drillOption?: IChartDrillOption;
     },
     thunkAPI,
   ) => {
@@ -284,11 +286,11 @@ export const fetchDataSetByPreviewChartAction = createAsyncThunk(
     );
     const builder = new ChartDataRequestBuilder(
       {
-        id: currentChartPreview?.backendChart?.viewId,
+        id: currentChartPreview?.backendChart?.view.id || '',
+        config: currentChartPreview?.backendChart?.view.config || {},
         computedFields:
           currentChartPreview?.backendChart?.config?.computedFields || [],
-        view: currentChartPreview?.backendChart?.view,
-      } as any,
+      },
       currentChartPreview?.chartConfig?.datas,
       currentChartPreview?.chartConfig?.settings,
       arg.pageInfo,
@@ -297,6 +299,7 @@ export const fetchDataSetByPreviewChartAction = createAsyncThunk(
     );
     const data = builder
       .addExtraSorters(arg?.sorter ? [arg?.sorter as any] : [])
+      .addDrillOption(arg?.drillOption)
       .build();
 
     const response = await request2({
@@ -314,7 +317,12 @@ export const fetchDataSetByPreviewChartAction = createAsyncThunk(
 export const updateFilterAndFetchDataset = createAsyncThunk(
   'viz/updateFilterAndFetchDataset',
   async (
-    arg: { backendChartId: string; chartPreview?: ChartPreview; payload },
+    arg: {
+      backendChartId: string;
+      chartPreview?: ChartPreview;
+      payload;
+      drillOption?: IChartDrillOption;
+    },
     thunkAPI,
   ) => {
     await thunkAPI.dispatch(
@@ -326,6 +334,7 @@ export const updateFilterAndFetchDataset = createAsyncThunk(
     await thunkAPI.dispatch(
       fetchDataSetByPreviewChartAction({
         backendChartId: arg.backendChartId,
+        drillOption: arg.drillOption,
       }),
     );
 

@@ -17,7 +17,6 @@
  */
 
 import { Divider, Input, List, Space } from 'antd';
-import useI18NPrefix from 'app/hooks/useI18NPrefix';
 import debounce from 'lodash/debounce';
 import { FC, memo, useEffect, useState } from 'react';
 import styled from 'styled-components/macro';
@@ -26,13 +25,12 @@ const ChartSearchableList: FC<{
   source: Array<{ value: string; label: string }>;
   onItemSelected: (itemKey) => void;
 }> = memo(({ source, onItemSelected }) => {
-  const [listItems, setListItmes] = useState(source);
+  const [listItems, setListItems] = useState(source);
   const [searchValue, setSearchValue] = useState<string>();
-  const t = useI18NPrefix(`viz.workbench.dataview`);
 
   useEffect(() => {
     setSearchValue('');
-    setListItmes(source);
+    setListItems(source);
   }, [source]);
 
   const handleListItemClick = itemKey => {
@@ -42,12 +40,12 @@ const ChartSearchableList: FC<{
   const handleSearch = debounce((value: string) => {
     setSearchValue(value);
     if (!value || !value.trim()) {
-      setListItmes(source);
+      setListItems(source);
     }
     const newListItems = source?.filter(item =>
       item?.label.toUpperCase().includes(value.toUpperCase()),
     );
-    setListItmes(newListItems);
+    setListItems(newListItems);
   }, 100);
 
   return (

@@ -18,6 +18,7 @@
 
 import { Form, FormInstance, Radio, Select, Space } from 'antd';
 import { CascaderOptionType } from 'antd/lib/cascader';
+import { ControllerFacadeTypes } from 'app/constants';
 import useI18NPrefix from 'app/hooks/useI18NPrefix';
 import {
   OPERATOR_TYPE_OPTION,
@@ -25,17 +26,17 @@ import {
 } from 'app/pages/DashBoardPage/constants';
 import { RelationFilterValue } from 'app/types/ChartConfig';
 import ChartDataView from 'app/types/ChartDataView';
-import { ControllerFacadeTypes } from 'app/types/FilterControlPanel';
 import { View } from 'app/types/View';
 import { getDistinctFields } from 'app/utils/fetch';
+import { transformMeta } from 'app/utils/internalChartHelper';
 import { FC, memo, useCallback, useEffect, useMemo, useState } from 'react';
 import styled from 'styled-components/macro';
-import { G30 } from 'styles/StyleConstants';
 import { request2 } from 'utils/request';
 import { errorHandle } from 'utils/utils';
 import { ControllerConfig } from '../../../types';
 import { AssistViewFields } from './AssistViewFields';
 import { CustomOptions } from './CustomOptions';
+
 const ValuesOptionsSetter: FC<{
   controllerType: ControllerFacadeTypes;
   form: FormInstance<{ config: ControllerConfig }> | undefined;
@@ -70,11 +71,12 @@ const ValuesOptionsSetter: FC<{
     if (!viewId) return [];
     try {
       const { data } = await request2<View>(`/views/${viewId}`);
-      const model = JSON.parse(data.model);
-      const option: CascaderOptionType[] = Object.keys(model).map(key => {
+      let meta = transformMeta(data?.model);
+      if (!meta) return [];
+      const option: CascaderOptionType[] = meta.map(item => {
         return {
-          value: key,
-          label: key,
+          value: item.id,
+          label: item.id,
         };
       });
       return option;
@@ -278,7 +280,7 @@ const ValuesOptionsSetter: FC<{
                             }}
                           >
                             <span>{item.label || item.key}</span>
-                            <span style={{ color: G30 }}>{item.key}</span>
+                            <FieldKey>{item.key}</FieldKey>
                           </div>
                         </Select.Option>
                       ))}
@@ -302,8 +304,13 @@ const ValuesOptionsSetter: FC<{
 });
 
 export default ValuesOptionsSetter;
+
 const Wrap = styled.div`
   .transfer {
     padding: 10px 0;
   }
+`;
+
+const FieldKey = styled.span`
+  color: ${p => p.theme.textColorDisabled};
 `;

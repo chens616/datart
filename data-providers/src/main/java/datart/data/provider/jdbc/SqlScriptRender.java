@@ -29,10 +29,10 @@ import datart.core.data.provider.QueryScript;
 import datart.core.data.provider.ScriptVariable;
 import datart.data.provider.base.DataProviderException;
 import datart.data.provider.calcite.SqlBuilder;
-import datart.data.provider.calcite.SqlValidateUtils;
+import datart.data.provider.calcite.SqlNodeUtils;
 import datart.data.provider.calcite.SqlParserUtils;
+import datart.data.provider.calcite.SqlValidateUtils;
 import datart.data.provider.freemarker.FreemarkerContext;
-import datart.data.provider.local.LocalDB;
 import datart.data.provider.script.ReplacementPair;
 import datart.data.provider.script.ScriptRender;
 import datart.data.provider.script.VariablePlaceholder;
@@ -43,7 +43,6 @@ import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
-import org.apache.commons.lang3.CharUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Comparator;
@@ -62,10 +61,6 @@ public class SqlScriptRender extends ScriptRender {
     public static final String FALSE_CONDITION = "1=0";
 
     public static final char SQL_SEP = ';';
-
-    public static final String REG_SQL_SINGLE_LINE_COMMENT = "-{2,}.*([\r\n])";
-
-    public static final String REG_SQL_MULTI_LINE_COMMENT = "/\\*+[\\s\\S]*\\*+/";
 
     private final SqlDialect sqlDialect;
 
@@ -116,7 +111,7 @@ public class SqlScriptRender extends ScriptRender {
             Exceptions.tr(DataProviderException.class, "message.no.valid.sql");
         }
 
-        String selectSql = cleanupSql(selectSql0);
+        String selectSql = SqlNodeUtils.cleanupSql(selectSql0);
 
         // build with execute params
         if (withExecuteParam) {
@@ -129,13 +124,17 @@ public class SqlScriptRender extends ScriptRender {
                     .build();
         }
 
-        selectSql = cleanupSql(selectSql);
+        selectSql = SqlNodeUtils.cleanupSql(selectSql);
 
         selectSql = replaceFragmentVariables(selectSql);
 
         selectSql = replaceVariables(selectSql);
 
-        return onlySelectStatement ? selectSql : script.replace(selectSql0, selectSql);
+        selectSql = onlySelectStatement ? selectSql : script.replace(selectSql0, selectSql);
+
+        RequestContext.setSql(selectSql);
+
+        return selectSql;
     }
 
 
@@ -236,14 +235,5 @@ public class SqlScriptRender extends ScriptRender {
         }
         return VARIABLE_PATTERN.matcher(sql).find();
     }
-
-    private String cleanupSql(String sql) {
-        sql = sql.replaceAll(REG_SQL_SINGLE_LINE_COMMENT, " ");
-        sql = sql.replaceAll(REG_SQL_MULTI_LINE_COMMENT, " ");
-        sql = sql.replace(CharUtils.CR, CharUtils.toChar(" "));
-        sql = sql.replace(CharUtils.LF, CharUtils.toChar(" "));
-        return sql.trim();
-    }
-
 
 }

@@ -19,7 +19,7 @@ import { migrateBoardConfig } from 'app/migration/BoardConfig/migrateBoardConfig
 import {
   BoardInfo,
   BoardType,
-  BoardTypeMap,
+  ColsKeyType,
   Dashboard,
   DashboardConfig,
   DataChart,
@@ -134,7 +134,7 @@ export const getInitBoardInfo = (obj: {
 
 export const getInitBoardConfig = (boardType?: BoardType) => {
   const dashboardConfig: DashboardConfig = {
-    type: boardType || BoardTypeMap.auto,
+    type: boardType || 'auto',
     version: '',
     background: BackgroundDefault,
     widgetDefaultSettings: {
@@ -147,6 +147,7 @@ export const getInitBoardConfig = (boardType?: BoardType) => {
     hasResetControl: false,
 
     // auto
+    allowOverlap: false,
     margin: [16, 16], //0-100
     containerPadding: [16, 16], //0-100
     cols: LAYOUT_COLS_MAP, //2-48    step 2
@@ -188,4 +189,41 @@ export const getChartDataView = (views: View[], dataCharts: DataChart[]) => {
     viewViews.push(viewView);
   });
   return viewViews;
+};
+
+export const getBoardMarginPadding = (
+  boardConfig: DashboardConfig,
+  colsKey: ColsKeyType,
+) => {
+  const { margin, containerPadding, mobileMargin, mobileContainerPadding } =
+    boardConfig;
+  const isMobile = colsKey === 'sm';
+  return isMobile
+    ? {
+        curMargin: mobileMargin || [MIN_MARGIN, MIN_MARGIN],
+        curPadding: mobileContainerPadding || [MIN_PADDING, MIN_PADDING],
+      }
+    : {
+        curMargin: margin,
+        curPadding: containerPadding,
+      };
+};
+
+export const isElView = el => {
+  let bool = false;
+  if (!el) return false;
+  let rect = el?.getBoundingClientRect();
+
+  let { top, bottom } = rect;
+
+  // top 元素顶端到可见区域顶端的距离
+  // bottom 元素底部端到可见区域顶端的距离
+  var viewHeight = window.innerHeight || document.documentElement.clientHeight; // 浏览器可见区域高度。
+
+  if (top <= viewHeight && bottom >= 0) {
+    bool = true;
+  } else if (top >= viewHeight || bottom <= 0) {
+    bool = false;
+  }
+  return bool;
 };

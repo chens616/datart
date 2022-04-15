@@ -16,7 +16,16 @@
  * limitations under the License.
  */
 
-import { ChartConfig, ChartDataSectionType } from 'app/types/ChartConfig';
+import { ChartDataSectionType } from 'app/constants';
+import {
+  ChartConfig,
+  ChartDataSectionField,
+  ChartStyleConfig,
+  LabelStyle,
+  LegendStyle,
+  LineStyle,
+  SeriesStyle,
+} from 'app/types/ChartConfig';
 import ChartDataSetDTO, { IChartDataSet } from 'app/types/ChartDataSet';
 import {
   getAxisLabel,
@@ -30,12 +39,15 @@ import {
   getSeriesTooltips4Polar2,
   getSplitLine,
   getStyles,
+  hadAxisLabelOverflowConfig,
+  setOptionsByAxisLabelOverflow,
   toFormattedValue,
   transformToDataSet,
 } from 'app/utils/chartHelper';
 import { init } from 'echarts';
-import Chart from '../models/Chart';
+import Chart from '../../../models/Chart';
 import Config from './config';
+import { DoubleYChartXAxis, DoubleYChartYAxis, Series } from './types';
 
 class BasicDoubleYChart extends Chart {
   dependency = [];
@@ -83,12 +95,13 @@ class BasicDoubleYChart extends Chart {
 
   onResize(opt: any, context): void {
     this.chart?.resize(context);
+    hadAxisLabelOverflowConfig(this.chart?.getOption()) && this.onUpdated(opt);
   }
 
   private getOptions(dataset: ChartDataSetDTO, config: ChartConfig) {
     const dataConfigs = config.datas || [];
     const styleConfigs = config.styles || [];
-    const settingConfigs = config.settings;
+    const settingConfigs = config.settings || [];
 
     const chartDataSet = transformToDataSet(
       dataset.rows,
@@ -117,6 +130,30 @@ class BasicDoubleYChart extends Chart {
       return {};
     }
 
+    const yAxisNames: string[] = leftMetricsConfigs
+      .concat(rightMetricsConfigs)
+      .map(getColumnRenderName);
+
+    // @TM 溢出自动根据bar长度设置标尺
+    const option = setOptionsByAxisLabelOverflow({
+      chart: this.chart,
+      xAxis: this.getXAxis(styleConfigs, groupConfigs, chartDataSet),
+      yAxis: this.getYAxis(
+        styleConfigs,
+        leftMetricsConfigs,
+        rightMetricsConfigs,
+      ),
+      grid: getGridStyle(styleConfigs),
+      series: this.getSeries(
+        styleConfigs,
+        settingConfigs,
+        leftMetricsConfigs,
+        rightMetricsConfigs,
+        chartDataSet,
+      ),
+      yAxisNames,
+    });
+
     return {
       tooltip: {
         trigger: 'axis',
@@ -132,42 +169,35 @@ class BasicDoubleYChart extends Chart {
           chartDataSet,
         ),
       },
-      grid: getGridStyle(styleConfigs),
-      legend: this.getLegend(
-        styleConfigs,
-        leftMetricsConfigs.concat(rightMetricsConfigs).map(getColumnRenderName),
-      ),
-      xAxis: this.getXAxis(styleConfigs, groupConfigs, chartDataSet),
-      yAxis: this.getYAxis(
-        styleConfigs,
-        leftMetricsConfigs,
-        rightMetricsConfigs,
-      ),
-      series: this.getSeries(
-        styleConfigs,
-        settingConfigs,
-        leftMetricsConfigs,
-        rightMetricsConfigs,
-        chartDataSet,
-      ),
+      legend: this.getLegend(styleConfigs, yAxisNames),
+      ...option,
     };
   }
 
   private getSeries(
-    styles,
-    settingConfigs,
+    styles: ChartStyleConfig[],
+    settingConfigs: ChartStyleConfig[],
     leftDeminsionConfigs,
     rightDeminsionConfigs,
     chartDataSet: IChartDataSet<string>,
-  ) {
+  ): Series[] {
     const _getSeriesByDemisionPostion =
-      () => (config, styles, settings, data, direction) => {
+      () =>
+      (
+        config: ChartDataSectionField,
+        styles: ChartStyleConfig[],
+        settings: ChartStyleConfig[],
+        data: IChartDataSet<string>,
+        direction: string,
+        yAxisIndex: number,
+      ): Series => {
         const [graphType, graphStyle] = getStyles(
           styles,
           [direction],
           ['graphType', 'graphStyle'],
         );
         return {
+          yAxisIndex,
           name: getColumnRenderName(config),
           type: graphType || 'line',
           sampling: 'average',
@@ -194,6 +224,7 @@ class BasicDoubleYChart extends Chart {
             settingConfigs,
             chartDataSet,
             'leftY',
+            0,
           ),
         ),
       )
@@ -205,17 +236,14 @@ class BasicDoubleYChart extends Chart {
             settingConfigs,
             chartDataSet,
             'rightY',
+            1,
           ),
         ),
-      )
-      .map((config, index) => {
-        (config as any).yAxisIndex = index;
-        return config;
-      });
+      );
     return series;
   }
 
-  private getItemStyle(config) {
+  private getItemStyle(config): { itemStyle: { color: string | undefined } } {
     const color = config?.color?.start;
     return {
       itemStyle: {
@@ -224,7 +252,10 @@ class BasicDoubleYChart extends Chart {
     };
   }
 
-  private getGraphStyle(graphType, style) {
+  private getGraphStyle(
+    graphType,
+    style,
+  ): { lineStyle?: LineStyle; barWidth?: string; color?: string } {
     if (graphType === 'line') {
       return { lineStyle: style };
     } else {
@@ -235,7 +266,11 @@ class BasicDoubleYChart extends Chart {
     }
   }
 
-  private getXAxis(styles, xAxisConfigs, chartDataSet: IChartDataSet<string>) {
+  private getXAxis(
+    styles: ChartStyleConfig[],
+    xAxisConfigs: ChartDataSectionField[],
+    chartDataSet: IChartDataSet<string>,
+  ): DoubleYChartXAxis {
     const fisrtXAxisConfig = xAxisConfigs[0];
     const [
       showAxis,
@@ -246,6 +281,7 @@ class BasicDoubleYChart extends Chart {
       rotate,
       showInterval,
       interval,
+      overflow,
     ] = getStyles(
       styles,
       ['xAxis'],
@@ -258,6 +294,7 @@ class BasicDoubleYChart extends Chart {
         'rotate',
         'showInterval',
         'interval',
+        'overflow',
       ],
     );
     const [showVerticalLine, verticalLineStyle] = getStyles(
@@ -275,6 +312,7 @@ class BasicDoubleYChart extends Chart {
         font,
         showInterval ? interval : null,
         rotate,
+        overflow,
       ),
       axisLine: getAxisLine(showAxis, lineStyle),
       axisTick: getAxisTick(showLabel, lineStyle),
@@ -283,14 +321,18 @@ class BasicDoubleYChart extends Chart {
     };
   }
 
-  private getYAxis(styles, leftDeminsionConfigs, rightDeminsionConfigs) {
+  private getYAxis(
+    styles: ChartStyleConfig[],
+    leftDeminsionConfigs: ChartDataSectionField[],
+    rightDeminsionConfigs: ChartDataSectionField[],
+  ): DoubleYChartYAxis[] {
     const [showHorizonLine, horizonLineStyle] = getStyles(
       styles,
       ['splitLine'],
       ['showHorizonLine', 'horizonLineStyle'],
     );
 
-    const _yAxisTemplate = (position, index, name) => {
+    const _yAxisTemplate = (position, name): DoubleYChartYAxis => {
       const [showAxis, inverse, font, showLabel] = getStyles(
         styles,
         [`${position}Y`],
@@ -300,7 +342,6 @@ class BasicDoubleYChart extends Chart {
       return {
         type: 'value',
         position,
-        offset: index * 20,
         showTitleAndUnit: true,
         name,
         nameLocation: 'middle',
@@ -312,30 +353,33 @@ class BasicDoubleYChart extends Chart {
           fontSize: 12,
         },
         inverse,
-        axisLine: getAxisLine(showAxis, null),
+        axisLine: getAxisLine(showAxis),
         axisLabel: getAxisLabel(showLabel, font),
         splitLine: getSplitLine(showHorizonLine, horizonLineStyle),
       };
     };
 
-    const leftYAxis = leftDeminsionConfigs.map((c, index) =>
-      _yAxisTemplate('left', index, getColumnRenderName(c)),
-    );
+    const leftYAxisNames = leftDeminsionConfigs
+      .map(getColumnRenderName)
+      .join('/');
+    const rightYAxisNames = rightDeminsionConfigs
+      .map(getColumnRenderName)
+      .join('/');
 
-    const rightYAxis = rightDeminsionConfigs.map((c, index) =>
-      _yAxisTemplate('right', index, getColumnRenderName(c)),
-    );
-    return leftYAxis.concat(rightYAxis);
+    return [
+      _yAxisTemplate('left', leftYAxisNames),
+      _yAxisTemplate('right', rightYAxisNames),
+    ];
   }
 
-  private getLegend(styles, seriesNames) {
+  private getLegend(styles, seriesNames): LegendStyle {
     const [show, type, font, legendPos, selectAll] = getStyles(
       styles,
       ['legend'],
       ['showLegend', 'type', 'font', 'position', 'selectAll'],
     );
     let positions = {};
-    let orient = {};
+    let orient = '';
 
     switch (legendPos) {
       case 'top':
@@ -355,7 +399,7 @@ class BasicDoubleYChart extends Chart {
         positions = { right: 8, top: 16, bottom: 24, width: 96 };
         break;
     }
-    const selected = seriesNames.reduce(
+    const selected: { [x: string]: boolean } = seriesNames.reduce(
       (obj, name) => ({
         ...obj,
         [name]: selectAll,
@@ -374,10 +418,13 @@ class BasicDoubleYChart extends Chart {
     };
   }
 
-  private getLabelStyle(styles, direction) {
+  private getLabelStyle(
+    styles: ChartStyleConfig[],
+    direction: string,
+  ): LabelStyle {
     const [showLabel, position, LabelFont] = getStyles(
       styles,
-      ['label'],
+      [direction + 'Label'],
       ['showLabel', 'position', 'font'],
     );
 
@@ -398,13 +445,13 @@ class BasicDoubleYChart extends Chart {
   }
 
   private getTooltipFormmaterFunc(
-    styleConfigs,
-    groupConfigs,
-    aggregateConfigs,
-    colorConfigs,
-    infoConfigs,
+    styleConfigs: ChartStyleConfig[],
+    groupConfigs: ChartDataSectionField[],
+    aggregateConfigs: ChartDataSectionField[],
+    colorConfigs: ChartDataSectionField[],
+    infoConfigs: ChartDataSectionField[],
     chartDataSet: IChartDataSet<string>,
-  ) {
+  ): (params) => string {
     return seriesParams => {
       return getSeriesTooltips4Polar2(
         chartDataSet,
@@ -417,7 +464,7 @@ class BasicDoubleYChart extends Chart {
     };
   }
 
-  private getSeriesStyle(styles) {
+  private getSeriesStyle(styles: ChartStyleConfig[]): SeriesStyle {
     const [smooth, stack, step, symbol] = getStyles(
       styles,
       ['graph'],

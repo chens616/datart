@@ -25,8 +25,7 @@ import {
 } from 'app/pages/DashBoardPage/pages/Board/slice/types';
 import ChartDataView from 'app/types/ChartDataView';
 import { useInjectReducer } from 'utils/@reduxjs/injectReducer';
-import { createSlice, isMySliceRejectedAction } from 'utils/@reduxjs/toolkit';
-import { rejectedActionMessageHandler } from 'utils/notification';
+import { createSlice } from 'utils/@reduxjs/toolkit';
 import { PageInfo } from '../../../../MainPage/pages/ViewPage/slice/types';
 import { createWidgetInfo } from '../../../utils/widget';
 import { getChartWidgetDataAsync, getControllerOptions } from './thunk';
@@ -46,39 +45,50 @@ const boardSlice = createSlice({
   name: 'board',
   initialState: boardInit as BoardState,
   reducers: {
-    setBoardDetailToState(
+    setBoardState(
       state,
       action: PayloadAction<{
         board: Dashboard;
         boardInfo: BoardInfo;
-        widgetMap: Record<string, Widget>;
-        widgetInfoMap: Record<string, WidgetInfo>;
-        views: ChartDataView[];
-        dataCharts: DataChart[];
       }>,
     ) {
-      const { board, boardInfo, widgetMap, widgetInfoMap, dataCharts, views } =
-        action.payload;
+      const { board, boardInfo } = action.payload;
       state.boardRecord[board.id] = board;
       state.boardInfoRecord[board.id] = boardInfo;
-      // widgetRecord
-      if (!state.widgetRecord[board.id]) {
-        state.widgetRecord[board.id] = {};
+      // can not del :dataCharts、views
+    },
+    setWidgetMapState(
+      state,
+      action: PayloadAction<{
+        boardId: string;
+        widgetMap: Record<string, Widget>;
+        widgetInfoMap: Record<string, WidgetInfo>;
+      }>,
+    ) {
+      const { boardId, widgetMap, widgetInfoMap } = action.payload;
+      if (!state.widgetRecord[boardId]) {
+        state.widgetRecord[boardId] = {};
       }
-      state.widgetRecord[board.id] = widgetMap;
-      // widgetInfoRecord
-      if (!state.widgetInfoRecord[board.id]) {
-        state.widgetInfoRecord[board.id] = {};
+      state.widgetRecord[boardId] = widgetMap;
+      if (!state.widgetInfoRecord[boardId]) {
+        state.widgetInfoRecord[boardId] = {};
       }
-      state.widgetInfoRecord[board.id] = widgetInfoMap;
-
-      dataCharts.forEach(chart => {
-        state.dataChartMap[chart.id] = chart;
+      state.widgetInfoRecord[boardId] = widgetInfoMap;
+    },
+    setDataChartToMap(state, action: PayloadAction<DataChart[]>) {
+      const dataCharts = action.payload;
+      dataCharts.forEach(dc => {
+        state.dataChartMap[dc.id] = dc;
       });
+    },
+
+    setViewMap(state, action: PayloadAction<ChartDataView[]>) {
+      const views = action.payload;
       views.forEach(view => {
         state.viewMap[view.id] = view;
       });
     },
+
     clearBoardStateById(state, action: PayloadAction<string>) {
       const boardId = action.payload;
       delete state.boardRecord[boardId];
@@ -129,24 +139,12 @@ const boardSlice = createSlice({
     },
     updateFullScreenPanel(
       state,
-      action: PayloadAction<{ recordId: string; itemId: string }>,
+      action: PayloadAction<{ boardId: string; itemId: string }>,
     ) {
-      const { recordId, itemId } = action.payload;
-      state.boardInfoRecord[recordId].fullScreenItemId = itemId;
-    },
-    setDataChartToMap(state, action: PayloadAction<DataChart[]>) {
-      const dataCharts = action.payload;
-      dataCharts.forEach(dc => {
-        state.dataChartMap[dc.id] = dc;
-      });
+      const { boardId, itemId } = action.payload;
+      state.boardInfoRecord[boardId].fullScreenItemId = itemId;
     },
 
-    setViewMap(state, action: PayloadAction<ChartDataView[]>) {
-      const views = action.payload;
-      views.forEach(view => {
-        state.viewMap[view.id] = view;
-      });
-    },
     setWidgetData(state, action: PayloadAction<WidgetData>) {
       const widgetData = action.payload;
       state.widgetDataMap[widgetData.id] = widgetData;
@@ -212,7 +210,10 @@ const boardSlice = createSlice({
       action: PayloadAction<{ boardId: string; wh: [number, number] }>,
     ) {
       const { boardId, wh } = action.payload;
-      state.boardInfoRecord[boardId].boardWidthHeight = wh;
+      let boardInfo = state.boardInfoRecord?.[boardId];
+      if (boardInfo) {
+        state.boardInfoRecord[boardId].boardWidthHeight = wh;
+      }
     },
     changeBoardPublish(
       state,
@@ -242,11 +243,19 @@ const boardSlice = createSlice({
         boardId: string;
         widgetId: string;
         errInfo?: string;
+        errorType: 'request' | 'interaction';
       }>,
     ) {
-      const { boardId, widgetId, errInfo } = action.payload;
+      const { boardId, widgetId, errInfo, errorType } = action.payload;
+
       if (!state.widgetInfoRecord?.[boardId]?.[widgetId]) return;
-      state.widgetInfoRecord[boardId][widgetId].errInfo = errInfo;
+      let widgetInfo = state.widgetInfoRecord[boardId][widgetId];
+
+      if (errInfo) {
+        widgetInfo.errInfo[errorType] = errInfo;
+      } else {
+        delete widgetInfo[errorType];
+      }
     },
     resetControlWidgets(
       state,
@@ -302,10 +311,6 @@ const boardSlice = createSlice({
         state.widgetInfoRecord[boardId][widgetId].loading = false;
       } catch (error) {}
     });
-    builder.addMatcher(
-      isMySliceRejectedAction(boardSlice.name),
-      rejectedActionMessageHandler,
-    );
   },
 });
 export const { actions: boardActions } = boardSlice;

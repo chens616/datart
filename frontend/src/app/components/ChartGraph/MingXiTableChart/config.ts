@@ -56,7 +56,7 @@ const config: ChartConfig = {
       ],
     },
     {
-      label: 'column.conditionStyle',
+      label: 'column.conditionalStyle',
       key: 'column',
       comType: 'group',
       rows: [
@@ -124,18 +124,45 @@ const config: ChartConfig = {
                         },
                         comType: 'inputNumber',
                       },
+                      {
+                        label: 'style.align',
+                        key: 'align',
+                        default: 'default',
+                        comType: 'fontAlignment',
+                        options: {
+                          translateItemLabel: true,
+                          items: [
+                            {
+                              label: `@global@.style.alignDefault`,
+                              value: 'default',
+                            },
+                            {
+                              label: `viz.common.enum.fontAlignment.left`,
+                              value: 'left',
+                            },
+                            {
+                              label: `viz.common.enum.fontAlignment.center`,
+                              value: 'center',
+                            },
+                            {
+                              label: `viz.common.enum.fontAlignment.right`,
+                              value: 'right',
+                            },
+                          ],
+                        },
+                      },
                     ],
                   },
                   {
-                    label: 'column.conditionStyle',
-                    key: 'conditionStyle',
+                    label: 'column.conditionalStyle',
+                    key: 'conditionalStyle',
                     comType: 'group',
                     options: { expand: true },
                     rows: [
                       {
-                        label: 'column.conditionStylePanel',
-                        key: 'conditionStylePanel',
-                        comType: 'conditionStylePanel',
+                        label: 'column.conditionalStylePanel',
+                        key: 'conditionalStylePanel',
+                        comType: 'conditionalStylePanel',
                       },
                     ],
                   },
@@ -218,9 +245,9 @@ const config: ChartConfig = {
           options: {
             translateItemLabel: true,
             items: [
-              { label: 'tableSize.default', value: 'default' },
-              { label: 'tableSize.middle', value: 'middle' },
-              { label: 'tableSize.small', value: 'small' },
+              { label: '@global@.tableSize.default', value: 'default' },
+              { label: '@global@.tableSize.middle', value: 'middle' },
+              { label: '@global@.tableSize.small', value: 'small' },
             ],
           },
         },
@@ -301,46 +328,41 @@ const config: ChartConfig = {
         {
           label: 'style.fontWeight',
           key: 'fontWeight',
-          comType: 'select',
+          comType: 'fontWeight',
           default: 'normal',
-          options: {
-            translateItemLabel: true,
-            items: [
-              { label: '@global@.fontWeight.normal', value: 'normal' },
-              { label: '@global@.fontWeight.bold', value: 'bold' },
-              { label: '@global@.fontWeight.bolder', value: 'bolder' },
-              { label: '@global@.fontWeight.lighter', value: 'lighter' },
-              { label: '100', value: '100' },
-              { label: '200', value: '200' },
-              { label: '300', value: '300' },
-              { label: '400', value: '400' },
-              { label: '500', value: '500' },
-              { label: '600', value: '600' },
-              { label: '700', value: '700' },
-              { label: '800', value: '800' },
-              { label: '900', value: '900' },
-            ],
-          },
         },
         {
           label: 'style.fontStyle',
           key: 'fontStyle',
-          comType: 'select',
+          comType: 'fontStyle',
           default: 'normal',
-          options: {
-            translateItemLabel: true,
-            items: [
-              { label: '@global@.fontStyle.normal', value: 'normal' },
-              { label: '@global@.fontStyle.italic', value: 'italic' },
-              { label: '@global@.fontStyle.oblique', value: 'oblique' },
-            ],
-          },
         },
         {
           label: 'style.align',
           key: 'align',
-          default: 'left',
+          default: 'default',
           comType: 'fontAlignment',
+          options: {
+            translateItemLabel: true,
+            items: [
+              {
+                label: `@global@.style.alignDefault`,
+                value: 'default',
+              },
+              {
+                label: `viz.common.enum.fontAlignment.left`,
+                value: 'left',
+              },
+              {
+                label: `viz.common.enum.fontAlignment.center`,
+                value: 'center',
+              },
+              {
+                label: `viz.common.enum.fontAlignment.right`,
+                value: 'right',
+              },
+            ],
+          },
         },
       ],
     },
@@ -450,8 +472,8 @@ const config: ChartConfig = {
           columnWidth: '列宽',
           columnStyle: '列样式',
           columnStylePanel: '列样式配置器',
-          conditionStyle: '条件样式',
-          conditionStylePanel: '条件样式配置器',
+          conditionalStyle: '条件样式',
+          conditionalStylePanel: '条件样式配置器',
           align: '对齐方式',
           enableFixedCol: '开启固定列宽',
           fixedColWidth: '固定列宽度设置',
@@ -471,6 +493,7 @@ const config: ChartConfig = {
           bgColor: '背景颜色',
           font: '字体',
           align: '对齐方式',
+          alignDefault: '默认',
           fontWeight: '字体粗细',
           fontFamily: '字体',
           oddBgColor: '奇行背景色',
@@ -479,17 +502,6 @@ const config: ChartConfig = {
           evenFontColor: '偶行字体色',
           fontSize: '字体大小',
           fontStyle: '字体样式',
-        },
-        fontStyle: {
-          normal: '常规体',
-          italic: '斜体',
-          oblique: '偏斜体',
-        },
-        fontWeight: {
-          normal: '常规字号',
-          bold: '粗体',
-          bolder: '特粗体',
-          lighter: '细体',
         },
         tableSize: {
           default: '默认',
@@ -528,8 +540,8 @@ const config: ChartConfig = {
           columnWidth: 'Column Width',
           columnStyle: 'Column Style',
           columnStylePanel: 'Column Style Panel',
-          conditionStyle: 'Condition Style',
-          conditionStylePanel: 'Condition Style Panel',
+          conditionalStyle: 'Conditional Style',
+          conditionalStylePanel: 'Conditional Style Panel',
           align: 'Align',
           enableFixedCol: 'Enable Fixed Column',
           fixedColWidth: 'Fixed Column Width',
@@ -548,6 +560,7 @@ const config: ChartConfig = {
           tableBodyStyle: 'Table Body Style',
           font: 'Font',
           align: 'Align',
+          alignDefault: 'Default',
           fontWeight: 'Font Weight',
           fontFamily: 'Font Family',
           oddBgColor: 'Odd Row Background Color',
@@ -556,17 +569,6 @@ const config: ChartConfig = {
           evenFontColor: 'Even Row Font Color',
           fontSize: 'Font Size',
           fontStyle: 'Font Style',
-        },
-        fontWeight: {
-          bolder: 'Bolder',
-          normal: 'Normal',
-          bold: 'Bold',
-          lighter: 'Lighter',
-        },
-        fontStyle: {
-          normal: 'Normal',
-          italic: 'Italic',
-          oblique: 'Oblique',
         },
         tableSize: {
           default: 'Default',

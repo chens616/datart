@@ -18,17 +18,21 @@
 
 import {
   AggregateFieldActionType,
+  ChartDataSectionType,
+  ChartDataViewFieldCategory,
+  DataViewFieldType,
+} from 'app/constants';
+import {
   ChartConfig,
   ChartDataConfig,
   ChartDataSectionField,
-  ChartDataSectionType,
   ChartStyleConfig,
 } from 'app/types/ChartConfig';
-import { ChartStyleConfigDTO } from 'app/types/ChartConfigDTO';
 import {
-  ChartDataViewFieldCategory,
-  ChartDataViewFieldType,
-} from 'app/types/ChartDataView';
+  ChartCommonConfig,
+  ChartStyleConfigDTO,
+} from 'app/types/ChartConfigDTO';
+import { ChartDataViewMeta } from 'app/types/ChartDataViewMeta';
 import {
   cond,
   curry,
@@ -46,9 +50,6 @@ export const transferChartConfigs = (
   targetConfig?: ChartConfig,
   sourceConfig?: ChartConfig,
 ) => {
-  if (!sourceConfig || !targetConfig) {
-    return targetConfig || sourceConfig;
-  }
   return pipe(
     transferChartDataConfig,
     transferChartStyleConfig,
@@ -99,10 +100,10 @@ export const transferChartDataConfig = (
       ChartDataSectionType.FILTER,
     ].map(type => curry(transferDataConfigImpl)(type)),
     ...[ChartDataSectionType.MIXED].map(type =>
-      curry(transferMixedToOther)(type),
+      curry(transferMixedToNonMixed)(type),
     ),
     ...[ChartDataSectionType.MIXED].map(type =>
-      curry(transferOtherToMixed)(type),
+      curry(transferNonMixedToMixed)(type),
     ),
   )(targetConfig, sourceConfig);
 };
@@ -133,18 +134,7 @@ const transferDataConfigImpl = (
           (section?.rows || []).length + 1,
         );
       })
-      .sort((a, b) => {
-        if (
-          reachLowerBoundCount(a?.limit, a?.rows?.length) !==
-          reachLowerBoundCount(b?.limit, b?.rows?.length)
-        ) {
-          return (
-            reachLowerBoundCount(b?.limit, b?.rows?.length) -
-            reachLowerBoundCount(a?.limit, a?.rows?.length)
-          );
-        }
-        return (a?.rows?.length || 0) - (b?.rows?.length || 0);
-      })?.[0];
+      .sort(chartDataSectionRowLimitationComparer)?.[0];
     if (minimalRowConfig && row) {
       minimalRowConfig.rows = (minimalRowConfig.rows || []).concat([row]);
     }
@@ -152,7 +142,7 @@ const transferDataConfigImpl = (
   return targetConfig!;
 };
 
-const transferOtherToMixed = (
+const transferNonMixedToMixed = (
   sectionType: ChartDataSectionType,
   targetConfig?: ChartConfig,
   sourceConfig?: ChartConfig,
@@ -186,18 +176,7 @@ const transferOtherToMixed = (
             (section?.rows || []).length + 1,
           );
         })
-        .sort((a, b) => {
-          if (
-            reachLowerBoundCount(a?.limit, a?.rows?.length) !==
-            reachLowerBoundCount(b?.limit, b?.rows?.length)
-          ) {
-            return (
-              reachLowerBoundCount(b?.limit, b?.rows?.length) -
-              reachLowerBoundCount(a?.limit, a?.rows?.length)
-            );
-          }
-          return (a?.rows?.length || 0) - (b?.rows?.length || 0);
-        })?.[0];
+        .sort(chartDataSectionRowLimitationComparer)?.[0];
       if (minimalRowConfig && row) {
         minimalRowConfig.rows = (minimalRowConfig.rows || []).concat([row]);
       }
@@ -207,7 +186,7 @@ const transferOtherToMixed = (
   return targetConfig!;
 };
 
-const transferMixedToOther = (
+const transferMixedToNonMixed = (
   sectionType: ChartDataSectionType,
   targetConfig?: ChartConfig,
   sourceConfig?: ChartConfig,
@@ -226,11 +205,11 @@ const transferMixedToOther = (
   ) {
     const dimensions = sourceSectionConfigRows?.filter(
       r =>
-        r.type === ChartDataViewFieldType.DATE ||
-        r.type === ChartDataViewFieldType.STRING,
+        r.type === DataViewFieldType.DATE ||
+        r.type === DataViewFieldType.STRING,
     );
     const metrics = sourceSectionConfigRows?.filter(
-      r => r.type === ChartDataViewFieldType.NUMERIC,
+      r => r.type === DataViewFieldType.NUMERIC,
     );
 
     while (Boolean(dimensions?.length)) {
@@ -246,18 +225,7 @@ const transferMixedToOther = (
             (section?.rows || []).length + 1,
           );
         })
-        .sort((a, b) => {
-          if (
-            reachLowerBoundCount(a?.limit, a?.rows?.length) !==
-            reachLowerBoundCount(b?.limit, b?.rows?.length)
-          ) {
-            return (
-              reachLowerBoundCount(b?.limit, b?.rows?.length) -
-              reachLowerBoundCount(a?.limit, a?.rows?.length)
-            );
-          }
-          return (a?.rows?.length || 0) - (b?.rows?.length || 0);
-        })?.[0];
+        .sort(chartDataSectionRowLimitationComparer)?.[0];
       if (minimalRowConfig && row) {
         minimalRowConfig.rows = (minimalRowConfig.rows || []).concat([row]);
       }
@@ -276,18 +244,7 @@ const transferMixedToOther = (
             (section?.rows || []).length + 1,
           );
         })
-        .sort((a, b) => {
-          if (
-            reachLowerBoundCount(a?.limit, a?.rows?.length) !==
-            reachLowerBoundCount(b?.limit, b?.rows?.length)
-          ) {
-            return (
-              reachLowerBoundCount(b?.limit, b?.rows?.length) -
-              reachLowerBoundCount(a?.limit, a?.rows?.length)
-            );
-          }
-          return (a?.rows?.length || 0) - (b?.rows?.length || 0);
-        })?.[0];
+        .sort(chartDataSectionRowLimitationComparer)?.[0];
       if (minimalRowConfig && row) {
         minimalRowConfig.rows = (minimalRowConfig.rows || []).concat([row]);
       }
@@ -297,7 +254,18 @@ const transferMixedToOther = (
   return targetConfig!;
 };
 
-const balanceAssignConfigRows = sources => {};
+function chartDataSectionRowLimitationComparer(prev, next) {
+  if (
+    reachLowerBoundCount(prev?.limit, prev?.rows?.length) !==
+    reachLowerBoundCount(next?.limit, next?.rows?.length)
+  ) {
+    return (
+      reachLowerBoundCount(next?.limit, next?.rows?.length) -
+      reachLowerBoundCount(prev?.limit, prev?.rows?.length)
+    );
+  }
+  return (prev?.rows?.length || 0) - (next?.rows?.length || 0);
+}
 
 export function isInRange(limit?: ChartDataConfig['limit'], count: number = 0) {
   return cond(
@@ -346,9 +314,6 @@ export function diffHeaderRows(
   oldRows: Array<{ colName: string }>,
   newRows: Array<{ colName: string }>,
 ) {
-  if (!oldRows?.length) {
-    return true;
-  }
   if (oldRows?.length !== newRows?.length) {
     return true;
   }
@@ -381,11 +346,54 @@ export function transformMeta(model?: string) {
     return undefined;
   }
   const jsonObj = JSON.parse(model);
-  return Object.keys(jsonObj).map(colKey => ({
-    ...jsonObj[colKey],
-    id: colKey,
-    category: ChartDataViewFieldCategory.Field,
-  }));
+  const HierarchyModel = 'hierarchy' in jsonObj ? jsonObj.hierarchy : jsonObj;
+  return Object.keys(HierarchyModel || {}).flatMap(colKey => {
+    const column = HierarchyModel[colKey];
+    if (!isEmptyArray(column?.children)) {
+      return column.children.map(c => ({
+        ...c,
+        id: c.name,
+        category: ChartDataViewFieldCategory.Field,
+      }));
+    }
+    return {
+      ...column,
+      id: colKey,
+      category: ChartDataViewFieldCategory.Field,
+    };
+  });
+}
+
+export function transformHierarchyMeta(model?: string): ChartDataViewMeta[] {
+  if (!model) {
+    return [];
+  }
+  const modelObj = JSON.parse(model);
+  const hierarchyMeta = !Object.keys(modelObj?.hierarchy || {}).length
+    ? modelObj.columns
+    : modelObj.hierarchy;
+  return Object.keys(hierarchyMeta || {}).map(key => {
+    return getMeta(key, hierarchyMeta?.[key]);
+  });
+}
+
+function getMeta(key, column) {
+  let children;
+  let isHierarchy = false;
+  if (!isEmptyArray(column?.children)) {
+    isHierarchy = true;
+    children = column?.children.map(child => getMeta(child?.name, child));
+  }
+
+  return {
+    ...column,
+    id: key,
+    subType: column?.category,
+    category: isHierarchy
+      ? ChartDataViewFieldCategory.Hierarchy
+      : ChartDataViewFieldCategory.Field,
+    children: children,
+  };
 }
 
 export function mergeChartStyleConfigs(
@@ -413,18 +421,13 @@ export function mergeChartStyleConfigs(
     const sEle =
       'key' in tEle ? source?.find(s => s?.key === tEle.key) : source?.[index];
 
-    if (!isUndefined(sEle?.['value']) && (!sEle?.comType || !tEle.comType)) {
-      tEle['value'] = sEle?.['value'];
-    } else if (
-      !isUndefined(sEle?.['value']) &&
-      sEle?.comType === tEle.comType
-    ) {
+    if (!isUndefined(sEle?.['value'])) {
       tEle['value'] = sEle?.['value'];
     }
     if (!isEmptyArray(tEle?.rows)) {
       tEle['rows'] = mergeChartStyleConfigs(tEle.rows, sEle?.rows, options);
     } else if (sEle && !isEmptyArray(sEle?.rows)) {
-      // Note: we merge all rows data when target rows is emtpy
+      // Note: we merge all rows data when target rows is empty
       tEle['rows'] = sEle?.rows;
     }
   }
@@ -470,7 +473,7 @@ export function getRequiredAggregatedSections(dataConfigs?) {
   );
 }
 
-// TODO(Stephen): tobe delete after use ChartDataSet Model in charts
+// TODO(Stephen): to be delete after use ChartDataSet Model in charts
 // 兼容 impala 聚合函数小写问题
 export const filterSqlOperatorName = (requestParams, widgetData) => {
   const sqlOperatorNameList = requestParams.aggregators.map(aggConfig =>
@@ -485,4 +488,117 @@ export const filterSqlOperatorName = (requestParams, widgetData) => {
         sqlOperatorName.toLocaleUpperCase() + item.name.slice(index));
   });
   return widgetData;
+};
+
+// 获取当前echart坐标轴区域的宽度
+export function getAxisLengthByConfig(config: ChartCommonConfig) {
+  const { chart, xAxis, yAxis, grid, series, yAxisNames, horizon } = config;
+  const axisOpts = !horizon ? xAxis : yAxis;
+  // datart 布局配置分为百分比和像素
+  const getPositionLengthInfo = (
+    positionConfig: string | number,
+  ): {
+    length: number;
+    type: 'percent' | 'px';
+  } => {
+    if (typeof positionConfig === 'string') {
+      const lengthPercentInt = parseInt(positionConfig.replace('%', ''), 10);
+      if (isNaN(lengthPercentInt)) {
+        throw new Error(`${positionConfig} is not a number`);
+      }
+      return {
+        length: lengthPercentInt / 100,
+        type: 'percent',
+      };
+    }
+    return {
+      length: positionConfig,
+      type: 'px',
+    };
+  };
+
+  // 获取坐标轴宽度
+  const getAxisWidth = (YAxisLength: number): number => {
+    return (Array.isArray(axisOpts) ? axisOpts : [axisOpts]).reduce(
+      (prev, item) => {
+        const { fontSize, show } = item.axisLabel;
+        // 预留一个字符长度
+        const axisLabelMaxWidth = show ? (YAxisLength + 1) * fontSize : 0;
+        prev += axisLabelMaxWidth;
+        return prev;
+      },
+      0,
+    );
+  };
+
+  const { containerLabel, left, right } = grid;
+
+  // 找到轴上最大的数字长度
+  let foundMaxAxisLength = 0;
+
+  if (containerLabel && !horizon) {
+    foundMaxAxisLength = series.reduce((prev, sery) => {
+      sery?.data?.forEach(item => {
+        yAxisNames.forEach(name => {
+          if (item.name === name) {
+            const yNumStr = `${item[0]}`;
+            if (yNumStr.length > prev) {
+              prev = yNumStr.length;
+            }
+          }
+        });
+      });
+      return prev;
+    }, 0);
+  }
+
+  const axisLabelMaxWidth = getAxisWidth(foundMaxAxisLength);
+
+  const left_ = getPositionLengthInfo(left);
+  const right_ = getPositionLengthInfo(right);
+
+  const containerWidth = chart?.getWidth() || 0;
+
+  // 左右边距
+  const leftWidth =
+    left_.type === 'px' ? left_.length : containerWidth * left_.length;
+  const rightWidth =
+    right_.type === 'px' ? right_.length : containerWidth * right_.length;
+
+  // 坐标轴区域宽度 = 容器宽度 - 最大字符所占长度 - 左右边距
+  return containerWidth - axisLabelMaxWidth - leftWidth - rightWidth;
+}
+
+export const transformToViewConfig = (
+  viewConfig?: string | object,
+): {
+  cache?: boolean;
+  cacheExpires?: number;
+  concurrencyControl?: boolean;
+  concurrencyControlMode?: string;
+} => {
+  let viewConfigMap = viewConfig;
+  if (typeof viewConfig === 'string') {
+    viewConfigMap = JSON.parse(viewConfig);
+  }
+  const fields = [
+    'cache',
+    'cacheExpires',
+    'concurrencyControl',
+    'concurrencyControlMode',
+  ];
+  return fields.reduce((acc, cur) => {
+    acc[cur] = viewConfigMap?.[cur];
+    return acc;
+  }, {});
+};
+
+export const buildDragItem = (item, children: any[] = []) => {
+  return {
+    colName: item?.id,
+    type: item?.type,
+    subType: item?.subType,
+    category: item?.category,
+    children: children.map(c => buildDragItem(c)),
+  };
 };

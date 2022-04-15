@@ -24,6 +24,7 @@ import {
 import { Dropdown, Menu, TableColumnType, TableProps, Tooltip } from 'antd';
 import { ToolbarButton } from 'app/components';
 import { VirtualTable } from 'app/components/VirtualTable';
+import { DataViewFieldType } from 'app/constants';
 import useI18NPrefix from 'app/hooks/useI18NPrefix';
 import { memo, ReactElement, useMemo } from 'react';
 import styled from 'styled-components/macro';
@@ -34,15 +35,16 @@ import {
   WARNING,
 } from 'styles/StyleConstants';
 import { uuidv4 } from 'utils/utils';
-import { ColumnCategories, ColumnTypes } from '../constants';
+import { ColumnCategories } from '../constants';
 import { Column, Model } from '../slice/types';
-import { getColumnWidthMap } from '../utils';
+import { getColumnWidthMap, getHierarchyColumn } from '../utils';
 const ROW_KEY = 'DATART_ROW_KEY';
 
 interface SchemaTableProps extends TableProps<object> {
   height: number;
   width: number;
   model: Model;
+  hierarchy: Model;
   dataSource?: object[];
   hasCategory?: boolean;
   getExtraHeaderActions?: (
@@ -60,6 +62,7 @@ export const SchemaTable = memo(
     height,
     width: propsWidth,
     model,
+    hierarchy,
     dataSource,
     hasCategory,
     getExtraHeaderActions,
@@ -86,15 +89,17 @@ export const SchemaTable = memo(
     } = useMemo(() => {
       let tableWidth = 0;
       const columns = Object.entries(model).map(([name, column]) => {
+        const hierarchyColumn = getHierarchyColumn(name, hierarchy) || column;
+
         const width = columnWidthMap[name];
         tableWidth += width;
 
         let icon;
-        switch (column.type) {
-          case ColumnTypes.Number:
+        switch (hierarchyColumn.type) {
+          case DataViewFieldType.NUMERIC:
             icon = <NumberOutlined />;
             break;
-          case ColumnTypes.Date:
+          case DataViewFieldType.DATE:
             icon = <CalendarOutlined />;
             break;
           default:
@@ -103,7 +108,7 @@ export const SchemaTable = memo(
         }
 
         const extraActions =
-          getExtraHeaderActions && getExtraHeaderActions(name, column);
+          getExtraHeaderActions && getExtraHeaderActions(name, hierarchyColumn);
 
         const title = (
           <>
@@ -112,11 +117,14 @@ export const SchemaTable = memo(
               trigger={['click']}
               overlay={
                 <Menu
-                  selectedKeys={[column.type, `category-${column.category}`]}
+                  selectedKeys={[
+                    hierarchyColumn.type,
+                    `category-${hierarchyColumn.category}`,
+                  ]}
                   className="datart-schema-table-header-menu"
-                  onClick={onSchemaTypeChange(name, column)}
+                  onClick={onSchemaTypeChange(name, hierarchyColumn)}
                 >
-                  {Object.values(ColumnTypes).map(t => (
+                  {Object.values(DataViewFieldType).map(t => (
                     <Menu.Item key={t}>
                       {tg(`columnType.${t.toLowerCase()}`)}
                     </Menu.Item>
@@ -158,7 +166,7 @@ export const SchemaTable = memo(
           dataIndex: name,
           width,
           align:
-            column.type === ColumnTypes.Number
+            column.type === DataViewFieldType.NUMERIC
               ? ('right' as const)
               : ('left' as const),
         };
@@ -166,6 +174,7 @@ export const SchemaTable = memo(
       return { columns, tableWidth };
     }, [
       model,
+      hierarchy,
       columnWidthMap,
       hasCategory,
       getExtraHeaderActions,

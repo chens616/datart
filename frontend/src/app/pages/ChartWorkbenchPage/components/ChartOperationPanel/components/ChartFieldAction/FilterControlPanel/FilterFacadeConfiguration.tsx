@@ -17,27 +17,28 @@
  */
 
 import { InputNumber, Row, Select, Space } from 'antd';
-import useI18NPrefix, { I18NComponentProps } from 'app/hooks/useI18NPrefix';
-import ChartFilterCondition from 'app/pages/ChartWorkbenchPage/models/ChartFilterCondition';
-import { FilterConditionType, FilterFacade } from 'app/types/ChartConfig';
-import { ChartDataViewFieldCategory } from 'app/types/ChartDataView';
 import {
+  ChartDataViewFieldCategory,
   ControllerFacadeTypes,
   ControllerRadioFacadeTypes,
-} from 'app/types/FilterControlPanel';
+  FilterConditionType,
+} from 'app/constants';
+import useI18NPrefix, { I18NComponentProps } from 'app/hooks/useI18NPrefix';
+import ChartFilterCondition from 'app/models/ChartFilterCondition';
+import { FilterFacade } from 'app/types/ChartConfig';
 import { FC, memo, useEffect, useState } from 'react';
 import styled from 'styled-components/macro';
 import { IsKeyIn } from 'utils/object';
 
 const isDisableSingleDropdownListFacade = condition => {
-  let isDisableSignleDropdownList = true;
+  let isDisableSingleDropdownList = true;
   if (Array.isArray(condition?.value)) {
     if (IsKeyIn(condition?.value?.[0], 'key')) {
-      isDisableSignleDropdownList =
+      isDisableSingleDropdownList =
         condition?.value?.filter(n => n.isSelected)?.length > 1;
     }
   }
-  return isDisableSignleDropdownList;
+  return isDisableSingleDropdownList;
 };
 
 const getFacadeOptions = (condition, category) => {

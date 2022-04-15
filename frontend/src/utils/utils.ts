@@ -1,6 +1,7 @@
 import { message, TreeDataNode, TreeNodeProps } from 'antd';
 import { AxiosError, AxiosResponse } from 'axios';
 import classnames from 'classnames';
+import i18next from 'i18next';
 import { ReactElement } from 'react';
 import {
   FONT_FAMILY,
@@ -18,7 +19,7 @@ export function errorHandle(error) {
     const { response } = error as AxiosError;
     switch (response?.status) {
       case 401:
-        message.error({ key: '401', content: '未登录或会话过期，请重新登录' });
+        message.error({ key: '401', content: i18next.t('global.401') });
         removeToken();
         break;
       default:
@@ -39,9 +40,8 @@ export function getErrorMessage(error) {
     const { response } = error as AxiosError;
     switch (response?.status) {
       case 401:
-        message.error({ key: '401', content: '未登录或会话过期，请重新登录' });
         removeToken();
-        return '401';
+        return i18next.t('global.401');
       default:
         return response?.data.message || error.message;
     }
@@ -94,6 +94,7 @@ export function listToTree<
     getIcon?: (o: T) => ReactElement | ((props: TreeNodeProps) => ReactElement);
     getDisabled?: (o: T, path: string[]) => boolean;
     getSelectable?: (o: T) => boolean;
+    filter?: (path: string[], o: T) => boolean;
   },
 ): undefined | any[] {
   if (!list) {
@@ -104,8 +105,11 @@ export function listToTree<
   const childrenList: T[] = [];
 
   list.forEach(o => {
+    const path = parentPath.concat(o.id);
+    if (options?.filter && !options.filter(path, o)) {
+      return false;
+    }
     if (o.parentId === parentId) {
-      const path = parentPath.concat(o.id);
       treeNodes.push({
         ...o,
         key: o.id,

@@ -23,19 +23,16 @@ import {
   RadioChangeEvent,
   Select,
 } from 'antd';
+import { ChartDataViewFieldCategory, ControllerFacadeTypes } from 'app/constants';
 import useI18NPrefix from 'app/hooks/useI18NPrefix';
 import {
   ControllerWidgetContent,
   RelatedView,
 } from 'app/pages/DashBoardPage/pages/Board/slice/types';
 import { Variable } from 'app/pages/MainPage/pages/VariablePage/slice/types';
-import ChartDataView, {
-  ChartDataViewFieldCategory,
-} from 'app/types/ChartDataView';
-import { ControllerFacadeTypes } from 'app/types/FilterControlPanel';
+import ChartDataView from 'app/types/ChartDataView';
 import React, { memo, useCallback } from 'react';
 import styled from 'styled-components/macro';
-import { G20 } from 'styles/StyleConstants';
 import { filterValueTypeByControl, isRangeTypeController } from './utils';
 
 export interface RelatedViewFormProps {
@@ -129,7 +126,7 @@ export const RelatedViewForm: React.FC<RelatedViewFormProps> = memo(
                   style={{ display: 'flex', justifyContent: 'space-between' }}
                 >
                   <span>{item.name}</span>
-                  <span style={{ color: G20 }}>{item.valueType}</span>
+                  <FieldType>{item.valueType}</FieldType>
                 </div>
               </Option>
             ));
@@ -145,7 +142,7 @@ export const RelatedViewForm: React.FC<RelatedViewFormProps> = memo(
                   style={{ display: 'flex', justifyContent: 'space-between' }}
                 >
                   <span>{item.id}</span>
-                  <span style={{ color: G20 }}>{item.type}</span>
+                  <FieldType>{item.type}</FieldType>
                 </div>
               </Option>
             ));
@@ -258,4 +255,8 @@ const Wrap = styled.div`
       flex-shrink: 0;
     }
   }
+`;
+
+const FieldType = styled.span`
+  color: ${p => p.theme.textColorDisabled};
 `;

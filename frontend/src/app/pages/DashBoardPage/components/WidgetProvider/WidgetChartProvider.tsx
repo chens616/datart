@@ -16,21 +16,24 @@
  * limitations under the License.
  */
 
-import React, { FC, useContext } from 'react';
+import { DataChart } from 'app/pages/DashBoardPage/pages/Board/slice/types';
+import { createContext, FC, memo, useContext } from 'react';
 import { useSelector } from 'react-redux';
-import { WidgetChartContext } from '../../contexts/WidgetChartContext';
-import { WidgetContext } from '../../contexts/WidgetContext';
 import { selectDataChartById } from '../../pages/Board/slice/selector';
 import { BoardState } from '../../pages/Board/slice/types';
-export const WidgetChartProvider: FC = ({ children }) => {
+import { WidgetContext } from './WidgetProvider';
+
+export const WidgetChartContext = createContext<DataChart | undefined>(
+  {} as DataChart,
+);
+export const WidgetChartProvider: FC = memo(({ children }) => {
   const { datachartId } = useContext(WidgetContext);
   const dataChart = useSelector((state: { board: BoardState }) =>
     selectDataChartById(state, datachartId),
   );
-  // TODO 添加 widgetChart
   return (
     <WidgetChartContext.Provider value={dataChart}>
       {children}
     </WidgetChartContext.Provider>
   );
-};
+});

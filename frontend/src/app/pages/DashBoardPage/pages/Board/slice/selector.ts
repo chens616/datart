@@ -16,6 +16,7 @@
  * limitations under the License.
  */
 import { createSelector } from '@reduxjs/toolkit';
+import { DefaultWidgetData } from 'app/pages/DashBoardPage/constants';
 import { RootState } from 'types';
 import { boardInit } from '.';
 import { getLayoutWidgets } from '../../../utils/widget';
@@ -66,7 +67,7 @@ export const selectWidgetBy2Id = createSelector(
   (_1, _2, wid: string) => wid,
   (boardWidgetRecord, recordId, widgetId) => {
     try {
-      return boardWidgetRecord[recordId][widgetId];
+      return boardWidgetRecord?.[recordId]?.[widgetId];
     } catch (error) {
       return undefined;
     }
@@ -97,7 +98,7 @@ export const selectWidgetInfoBy2Id = createSelector(
   (_, bId: string, wId: string) => wId,
   (widgetInfoGroupMap, boardId, widgetId) => {
     try {
-      return widgetInfoGroupMap[boardId][widgetId];
+      return widgetInfoGroupMap?.[boardId]?.[widgetId];
     } catch (error) {
       return undefined;
     }
@@ -125,7 +126,7 @@ export const selectLayoutWidgetInfoMapById = createSelector(
 export const makeSelectBoardConfigById = () =>
   createSelector(selectBoardRecord, selectPropsId, (boardRecord, id) => {
     if (boardRecord[id]) {
-      return boardRecord[id];
+      return boardRecord?.[id];
     } else {
       return undefined;
     }
@@ -135,7 +136,7 @@ export const makeSelectBoardFullScreenPanelById = () =>
   createSelector(
     selectBoardInfoRecord,
     selectPropsId,
-    (BoardInfoRecord, id) => BoardInfoRecord[id].fullScreenItemId,
+    (BoardInfoRecord, id) => BoardInfoRecord?.[id]?.fullScreenItemId,
   );
 
 export const selectDataChartMap = createSelector(
@@ -145,7 +146,7 @@ export const selectDataChartMap = createSelector(
 
 export const selectDataChartById = createSelector(
   [selectDataChartMap, (_, chartId: string) => chartId],
-  (dataChartMap, id) => dataChartMap[id],
+  (dataChartMap, id) => dataChartMap[id] || undefined,
 );
 
 export const selectViewMap = createSelector(
@@ -156,12 +157,7 @@ export const selectViewMap = createSelector(
 // dataChartMap
 export const selectWidgetDataById = createSelector(
   [boardState, selectPropsId],
-  (state, wid) =>
-    state.widgetDataMap[wid] || {
-      id: '',
-      columns: [],
-      rows: [],
-    },
+  (state, wid) => state.widgetDataMap[wid] || DefaultWidgetData,
 );
 
 //  share

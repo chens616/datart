@@ -17,9 +17,9 @@
  */
 
 import { Radio } from 'antd';
-import useFetchFilterDataByCondtion from 'app/hooks/useFetchFilterDataByCondtion';
+import { ControllerRadioFacadeTypes } from 'app/constants';
+import useFetchFilterDataByCondition from 'app/hooks/useFetchFilterDataByCondition';
 import { RelationFilterValue } from 'app/types/ChartConfig';
-import { ControllerRadioFacadeTypes } from 'app/types/FilterControlPanel';
 import { updateBy } from 'app/utils/mutation';
 import { FC, memo, useState } from 'react';
 import { IsKeyIn } from 'utils/object';
@@ -42,7 +42,7 @@ const RadioGroupFilter: FC<PresentControllerFilterProps> = memo(
       }
     });
 
-    useFetchFilterDataByCondtion(viewId, condition, setOriginalNodes, view);
+    useFetchFilterDataByCondition(viewId, condition, setOriginalNodes, view);
 
     const handleSelectedNodeChange = (nodeKey: string) => {
       if (selectedNode === nodeKey) {

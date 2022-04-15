@@ -26,6 +26,7 @@ const config: ChartConfig = {
       required: true,
       type: 'group',
       limit: [0, 1],
+      drillable: true,
     },
     {
       label: 'metrics',
@@ -102,25 +103,8 @@ const config: ChartConfig = {
         {
           label: 'label.position',
           key: 'position',
-          comType: 'select',
+          comType: 'labelPosition',
           default: 'top',
-          options: {
-            items: [
-              { label: '上', value: 'top' },
-              { label: '左', value: 'left' },
-              { label: '右', value: 'right' },
-              { label: '下', value: 'bottom' },
-              { label: '内', value: 'inside' },
-              { label: '内左', value: 'insideLeft' },
-              { label: '内右', value: 'insideRight' },
-              { label: '内上', value: 'insideTop' },
-              { label: '内下', value: 'insideBottom' },
-              { label: '内左上', value: 'insideTopLeft' },
-              { label: '内左下', value: 'insideBottomLeft' },
-              { label: '内右上', value: 'insideTopRight' },
-              { label: '内右下', value: 'insideBottomRight' },
-            ],
-          },
         },
         {
           label: 'viz.palette.style.font',
@@ -162,15 +146,17 @@ const config: ChartConfig = {
         {
           label: 'legend.position',
           key: 'position',
-          comType: 'select',
+          comType: 'legendPosition',
           default: 'right',
+        },
+        {
+          label: 'legend.height',
+          key: 'height',
+          default: 0,
+          comType: 'inputNumber',
           options: {
-            items: [
-              { label: '右', value: 'right' },
-              { label: '上', value: 'top' },
-              { label: '下', value: 'bottom' },
-              { label: '左', value: 'left' },
-            ],
+            step: 40,
+            min: 0,
           },
         },
         {
@@ -242,6 +228,27 @@ const config: ChartConfig = {
           key: 'showInterval',
           default: false,
           comType: 'checkbox',
+        },
+        {
+          label: 'common.overflow',
+          key: 'overflow',
+          comType: 'select',
+          default: 'break',
+          options: {
+            translateItemLabel: true,
+            items: [
+              { label: '@global@.common.overflowType.none', value: 'none' },
+              {
+                label: '@global@.common.overflowType.truncate',
+                value: 'truncate',
+              },
+              { label: '@global@.common.overflowType.break', value: 'break' },
+              {
+                label: '@global@.common.overflowType.breakAll',
+                value: 'breakAll',
+              },
+            ],
+          },
         },
         {
           label: 'common.interval',
@@ -473,12 +480,19 @@ const config: ChartConfig = {
           position: '位置',
           showInterval: '显示刻度',
           interval: '刻度间隔',
+          overflow: '文本溢出',
           showTitleAndUnit: '显示标题和刻度',
           nameLocation: '标题位置',
           nameRotate: '标题旋转',
           nameGap: '标题与轴线距离',
           min: '最小值',
           max: '最大值',
+          overflowType: {
+            none: '溢出',
+            truncate: '截断',
+            break: '换行',
+            breakAll: '强制换行',
+          },
         },
         label: {
           title: '标签',
@@ -491,6 +505,7 @@ const config: ChartConfig = {
           type: '图例类型',
           selectAll: '图例全选',
           position: '图例位置',
+          height: '图例高度',
         },
         data: {
           color: '颜色',
@@ -544,17 +559,25 @@ const config: ChartConfig = {
           position: 'Position',
           showInterval: 'Show Interval',
           interval: 'Interval',
+          overflow: 'Overflow',
           showTitleAndUnit: 'Show Title and Unit',
           nameLocation: 'Name Location',
           nameRotate: 'Name Rotate',
           nameGap: 'Name Gap',
           min: 'Min',
           max: 'Max',
+          overflowType: {
+            none: 'None',
+            truncate: 'Truncate',
+            break: 'Break',
+            breakAll: 'BreakAll',
+          },
         },
         label: {
           title: 'Label',
           showLabel: 'Show Label',
           position: 'Position',
+          height: 'Height',
         },
         legend: {
           title: 'Legend',
@@ -562,6 +585,7 @@ const config: ChartConfig = {
           type: 'Type',
           selectAll: 'Select All',
           position: 'Position',
+          height: 'Height',
         },
         data: {
           color: 'Color',
@@ -587,7 +611,7 @@ const config: ChartConfig = {
           title: 'Y Axis',
         },
         splitLine: {
-          title: 'Splite Line',
+          title: 'Split Line',
           showHorizonLine: 'Show Horizontal Line',
           showVerticalLine: 'Show Vertical Line',
         },

@@ -16,24 +16,33 @@
  * limitations under the License.
  */
 
-import {Button, Form, Input} from 'antd';
-import {AuthForm} from 'app/components';
+import { Button, Form, Input } from 'antd';
+import { AuthForm } from 'app/components';
 import usePrefixI18N from 'app/hooks/useI18NPrefix';
-import {selectLoggedInUser, selectLoginLoading, selectOauth2Clients, selectVersion} from 'app/slice/selectors';
-import {getOauth2Clients, login, tryOauth} from 'app/slice/thunks';
-import React, {useCallback, useEffect, useState} from 'react';
-import {useDispatch, useSelector} from 'react-redux';
-import {Link, useHistory} from 'react-router-dom';
+import {
+  selectLoggedInUser,
+  selectLoginLoading,
+  selectOauth2Clients,
+} from 'app/slice/selectors';
+import { getOauth2Clients, tryOauth } from 'app/slice/thunks';
+import React, { useCallback, useEffect, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { Link, useHistory } from 'react-router-dom';
 import styled from 'styled-components/macro';
 import {
   BORDER_RADIUS,
   LINE_HEIGHT_ICON_LG,
   SPACE_MD,
 } from 'styles/StyleConstants';
-import {getToken} from 'utils/auth';
-import {editDashBoardInfoActions} from "../DashBoardPage/pages/BoardEditor/slice";
+import { getToken } from 'utils/auth';
 
-export function LoginForm() {
+export function LoginForm({
+  modal = false,
+  onLogin,
+}: {
+  modal?: boolean;
+  onLogin?: (value) => void;
+}) {
   const [switchUser, setSwitchUser] = useState(false);
   const dispatch = useDispatch();
   const history = useHistory();
@@ -50,42 +59,28 @@ export function LoginForm() {
   }, [history]);
 
   useEffect(() => {
-    dispatch(
-      getOauth2Clients(),
-    );
+    dispatch(getOauth2Clients());
   }, [dispatch]);
 
   useEffect(() => {
-    dispatch(
-      tryOauth(),
-    );
+    dispatch(tryOauth());
   }, [dispatch]);
-
-  const onLogin = useCallback(
-    values => {
-      dispatch(
-        login({
-          params: values,
-          resolve: () => {
-            toApp();
-          },
-        }),
-      );
-    },
-    [dispatch, toApp],
-  );
 
   const onSwitch = useCallback(() => {
     setSwitchUser(true);
   }, []);
 
-  let Oauth2BtnList = oauth2Clients.map((client) => {
-    return (<Oauth2Button key={client.value} href={client.value}>{client.name}</Oauth2Button>)
+  let Oauth2BtnList = oauth2Clients.map(client => {
+    return (
+      <Oauth2Button key={client.value} href={client.value}>
+        {client.name}
+      </Oauth2Button>
+    );
   });
 
   return (
     <AuthForm>
-      {logged && !switchUser ? (
+      {logged && !switchUser && !modal ? (
         <>
           <h2>{t('alreadyLoggedIn')}</h2>
           <UserPanel onClick={toApp}>
@@ -107,7 +102,7 @@ export function LoginForm() {
               },
             ]}
           >
-            <Input placeholder={t('username')} size="large"/>
+            <Input placeholder={t('username')} size="large" />
           </Form.Item>
           <Form.Item
             name="password"
@@ -118,7 +113,7 @@ export function LoginForm() {
               },
             ]}
           >
-            <Input placeholder={t('password')} type="password" size="large"/>
+            <Input placeholder={t('password')} type="password" size="large" />
           </Form.Item>
           <Form.Item className="last" shouldUpdate>
             {() => (
@@ -130,7 +125,7 @@ export function LoginForm() {
                 disabled={
                   loading ||
                   // !form.isFieldsTouched(true) ||
-                  !!form.getFieldsError().filter(({errors}) => errors.length)
+                  !!form.getFieldsError().filter(({ errors }) => errors.length)
                     .length
                 }
                 block
@@ -139,10 +134,15 @@ export function LoginForm() {
               </Button>
             )}
           </Form.Item>
-          <Links>
-            <LinkButton to="/forgetPassword">{t('forgotPassword')}</LinkButton>
-            <LinkButton to="/register">{t('register')}</LinkButton>
-          </Links>
+          {!modal && (
+            <Links>
+              <LinkButton to="/forgetPassword">
+                {t('forgotPassword')}
+              </LinkButton>
+              <LinkButton to="/register">{t('register')}</LinkButton>
+            </Links>
+          )}
+
           {Oauth2BtnList}
         </Form>
       )}
@@ -155,13 +155,13 @@ const Links = styled.div`
 `;
 
 const Oauth2Button = styled.a`
-display: block;
-background-color: blue;
-text-align: center;
-color: #fff;
-font-weight: bold;
-line-height: 36px;
-height: 36px;
+  display: block;
+  height: 36px;
+  font-weight: bold;
+  line-height: 36px;
+  color: #fff;
+  text-align: center;
+  background-color: blue;
 `;
 
 const LinkButton = styled(Link)`

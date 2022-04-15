@@ -16,13 +16,20 @@
  * limitations under the License.
  */
 
+import { ChartDataSectionType } from 'app/constants';
 import {
   ChartConfig,
   ChartDataSectionField,
-  ChartDataSectionType,
+  ChartStyleConfig,
+  LabelStyle,
+  LegendStyle,
 } from 'app/types/ChartConfig';
-import ChartDataSetDTO, { IChartDataSet } from 'app/types/ChartDataSet';
+import ChartDataSetDTO, {
+  IChartDataSet,
+  IChartDataSetRow,
+} from 'app/types/ChartDataSet';
 import {
+  getAutoFunnelTopPosition,
   getColumnRenderName,
   getExtraSeriesDataFormat,
   getExtraSeriesRowData,
@@ -34,8 +41,9 @@ import {
 } from 'app/utils/chartHelper';
 import { init } from 'echarts';
 import isEmpty from 'lodash/isEmpty';
-import Chart from '../models/Chart';
+import Chart from '../../../models/Chart';
 import Config from './config';
+import { Series, SeriesData } from './types';
 
 class BasicFunnelChart extends Chart {
   config = Config;
@@ -91,7 +99,7 @@ class BasicFunnelChart extends Chart {
   }
 
   private getOptions(dataset: ChartDataSetDTO, config: ChartConfig) {
-    const styleConfigs = config.styles;
+    const styleConfigs = config.styles || [];
     const dataConfigs = config.datas || [];
     const groupConfigs = dataConfigs
       .filter(c => c.type === ChartDataSectionType.GROUP)
@@ -137,16 +145,16 @@ class BasicFunnelChart extends Chart {
         aggregateList,
         infoConfigs,
       ),
-      legend: this.getLegendStyle(styleConfigs),
+      legend: this.getLegendStyle(styleConfigs, series.sort),
       series,
     };
   }
 
   private getDataItemStyle(
-    config,
+    config: ChartDataSectionField,
     colorConfigs: ChartDataSectionField[],
-    chartDataSetRow,
-  ) {
+    chartDataSetRow: IChartDataSetRow<string>,
+  ): { color: string | undefined } | undefined {
     const colorColConfig = colorConfigs?.[0];
     const columnColor = config?.color?.start;
     if (colorColConfig) {
@@ -165,7 +173,7 @@ class BasicFunnelChart extends Chart {
     }
   }
 
-  private getLabelStyle(styles) {
+  private getLabelStyle(styles: ChartStyleConfig[]): LabelStyle {
     const [show, position, font, metric, conversion, arrival, percentage] =
       getStyles(
         styles,
@@ -207,19 +215,26 @@ class BasicFunnelChart extends Chart {
     };
   }
 
-  private getLegendStyle(styles) {
-    const [show, type, font, legendPos] = getStyles(
+  private getLegendStyle(styles: ChartStyleConfig[], sort): LegendStyle {
+    const [show, type, font, legendPos, height] = getStyles(
       styles,
       ['legend'],
-      ['showLegend', 'type', 'font', 'position'],
+      ['showLegend', 'type', 'font', 'position', 'height'],
     );
     let positions = {};
-    let orient = {};
+    let orient = '';
+
+    const top = getAutoFunnelTopPosition({
+      chart: this.chart,
+      sort,
+      legendPos,
+      height,
+    });
 
     switch (legendPos) {
       case 'top':
         orient = 'horizontal';
-        positions = { top: 8, left: 8, right: 8, height: 32 };
+        positions = { top, left: 8, right: 8, height: 32 };
         break;
       case 'bottom':
         orient = 'horizontal';
@@ -227,16 +242,17 @@ class BasicFunnelChart extends Chart {
         break;
       case 'left':
         orient = 'vertical';
-        positions = { left: 8, top: 16, bottom: 24, width: 96 };
+        positions = { left: 8, top, bottom: 24, width: 96 };
         break;
       default:
         orient = 'vertical';
-        positions = { right: 8, top: 16, bottom: 24, width: 96 };
+        positions = { right: 8, top, bottom: 24, width: 96 };
         break;
     }
 
     return {
       ...positions,
+      height: height || null,
       show,
       type,
       orient,
@@ -245,12 +261,12 @@ class BasicFunnelChart extends Chart {
   }
 
   private getSeries(
-    styles,
+    styles: ChartStyleConfig[],
     aggregateConfigs: ChartDataSectionField[],
     groupConfigs: ChartDataSectionField[],
     dataList: IChartDataSet<string>,
-    infoConfigs,
-  ) {
+    infoConfigs: ChartDataSectionField[],
+  ): Series {
     const [selectAll] = getStyles(styles, ['legend'], ['selectAll']);
     const [sort, funnelAlign, gap] = getStyles(
       styles,
@@ -260,7 +276,7 @@ class BasicFunnelChart extends Chart {
 
     if (!groupConfigs.length) {
       const dc = dataList?.[0];
-      const datas = aggregateConfigs.map(aggConfig => {
+      const datas: SeriesData[] = aggregateConfigs.map(aggConfig => {
         return {
           ...aggConfig,
           select: selectAll,
@@ -298,7 +314,7 @@ class BasicFunnelChart extends Chart {
     }
 
     const flattenedDatas = aggregateConfigs.flatMap(aggConfig => {
-      const ormalizeSerieDatas = dataList.map(dc => {
+      const ormalizeSerieDatas: SeriesData[] = dataList.map(dc => {
         return {
           ...aggConfig,
           select: selectAll,
@@ -338,14 +354,14 @@ class BasicFunnelChart extends Chart {
     return series;
   }
 
-  private getFunnelSeriesData(seriesData) {
+  private getFunnelSeriesData(seriesData: SeriesData[]) {
     const _calculateConversionAndArrivalRatio = (data, index) => {
       if (index) {
         data.conversion = this.formatPercent(
-          (data.value?.[0] / seriesData[index - 1].value?.[0]) * 100,
+          (data.value?.[0] / Number(seriesData[index - 1].value?.[0])) * 100,
         );
         data.arrival = this.formatPercent(
-          (data.value?.[0] / seriesData[0].value?.[0]) * 100,
+          (data.value?.[0] / Number(seriesData[0].value?.[0])) * 100,
         );
       }
       return data;
@@ -354,14 +370,18 @@ class BasicFunnelChart extends Chart {
     return seriesData.map(_calculateConversionAndArrivalRatio);
   }
 
-  private formatPercent(per) {
+  private formatPercent(per: number): string {
     const perStr = per + '';
     return perStr.length - (perStr.indexOf('.') + 1) > 2
       ? per.toFixed(2)
       : perStr;
   }
 
-  private getFunnelChartTooltip(groupConfigs, aggregateConfigs, infoConfigs) {
+  private getFunnelChartTooltip(
+    groupConfigs: ChartDataSectionField[],
+    aggregateConfigs: ChartDataSectionField[],
+    infoConfigs: ChartDataSectionField[],
+  ): { trigger: string; formatter: (params) => string } {
     return {
       trigger: 'item',
       formatter(params) {

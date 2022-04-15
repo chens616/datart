@@ -1,14 +1,13 @@
-import { InfoCircleOutlined } from '@ant-design/icons';
 import { Form, FormInstance, Input, Radio, TreeSelect } from 'antd';
 import { ModalForm, ModalFormProps } from 'app/components';
 import useI18NPrefix from 'app/hooks/useI18NPrefix';
-import { BoardTypeMap } from 'app/pages/DashBoardPage/pages/Board/slice/types';
+import { BoardTypes } from 'app/pages/DashBoardPage/pages/Board/slice/types';
+import { fetchCheckName } from 'app/utils/fetch';
 import debounce from 'debounce-promise';
 import { CommonFormTypes, DEFAULT_DEBOUNCE_WAIT } from 'globalConstants';
 import { useCallback, useContext, useEffect, useMemo, useRef } from 'react';
 import { useSelector } from 'react-redux';
 import styled from 'styled-components/macro';
-import { request } from 'utils/request';
 import { getCascadeAccess } from '../../Access';
 import {
   selectIsOrgOwner,
@@ -79,6 +78,16 @@ export function SaveForm({ formProps, ...modalProps }: SaveFormProps) {
     }
   }, [initialValues]);
 
+  const boardTips = () => {
+    return (
+      <>
+        <span>{t('boardType.autoTips')}</span>
+        <br />
+        <span>{t('boardType.freeTips')}</span>
+      </>
+    );
+  };
+
   return (
     <ModalForm
       formProps={formProps}
@@ -108,20 +117,19 @@ export function SaveForm({ formProps, ...modalProps }: SaveFormProps) {
               if (!value || initialValues?.name === value) {
                 return Promise.resolve();
               }
+              if (!value.trim()) {
+                return Promise.reject(
+                  `${t('name')}${tg('validation.required')}`,
+                );
+              }
               const parentId = formRef.current?.getFieldValue('parentId');
-              return request({
-                url: `/viz/check/name`,
-                method: 'POST',
-                data: {
-                  name: value,
-                  orgId,
-                  vizType,
-                  parentId: parentId || null,
-                },
-              }).then(
-                () => Promise.resolve(),
-                err => Promise.reject(new Error(err.response.data.message)),
-              );
+              const data = {
+                name: value,
+                orgId,
+                vizType,
+                parentId: parentId || null,
+              };
+              return fetchCheckName('viz', data);
             }, DEFAULT_DEBOUNCE_WAIT),
           },
         ]}
@@ -143,16 +151,13 @@ export function SaveForm({ formProps, ...modalProps }: SaveFormProps) {
           ]}
           name="boardType"
           label={t('boardType.label')}
-          tooltip={{
-            title: t('boardType.tips'),
-            icon: <InfoCircleOutlined />,
-          }}
+          tooltip={boardTips()}
         >
           <Radio.Group>
-            <Radio.Button value={BoardTypeMap.auto}>
+            <Radio.Button value={BoardTypes[0]}>
               {t('boardType.auto')}
             </Radio.Button>
-            <Radio.Button value={BoardTypeMap.free}>
+            <Radio.Button value={BoardTypes[1]}>
               {t('boardType.free')}
             </Radio.Button>
           </Radio.Group>

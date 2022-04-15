@@ -19,12 +19,13 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import sqlReservedWords from 'app/assets/javascripts/sqlReservedWords';
 import { migrateViewConfig } from 'app/migration/ViewConfig/migrationViewDetailConfig';
+import beginViewModelMigration from 'app/migration/ViewConfig/migrationViewModelConfig';
 import { selectOrgId } from 'app/pages/MainPage/slice/selectors';
 import i18n from 'i18next';
 import { monaco } from 'react-monaco-editor';
 import { RootState } from 'types';
-import { request } from 'utils/request';
-import { errorHandle, rejectHandle } from 'utils/utils';
+import { request, request2 } from 'utils/request';
+import { errorHandle, getErrorMessage, rejectHandle } from 'utils/utils';
 import { viewActions } from '.';
 import { View } from '../../../../../types/View';
 import { selectVariables } from '../../VariablePage/slice/selectors';
@@ -41,8 +42,8 @@ import {
   selectCurrentEditingView,
   selectCurrentEditingViewAttr,
   selectCurrentEditingViewKey,
-  selectDatabases,
   selectEditingViews,
+  selectSourceDatabaseSchemas,
   selectViews,
 } from './selectors';
 import {
@@ -122,34 +123,55 @@ export const getViewDetail = createAsyncThunk<
 
     try {
       const { data } = await request<View>(`/views/${viewId}`);
-      const migrateData = migrateViewConfig(data);
-      return transformModelToViewModel(migrateData, tempViewModel);
+      data.config = migrateViewConfig(data.config);
+      data.model = beginViewModelMigration(data?.model);
+      return transformModelToViewModel(data, tempViewModel);
     } catch (error) {
       return rejectHandle(error, rejectWithValue);
     }
   },
 );
 
+export const getSchemaBySourceId = createAsyncThunk<any, string>(
+  'source/getSchemaBySourceId',
+  async (sourceId, { getState }) => {
+    const sourceSchemas = selectSourceDatabaseSchemas(getState() as RootState, {
+      id: sourceId,
+    });
+    if (sourceSchemas) {
+      return;
+    }
+    const { data } = await request2<any>({
+      url: `/sources/schemas/${sourceId}`,
+      method: 'GET',
+    });
+    return {
+      sourceId,
+      data,
+    };
+  },
+);
+
 export const runSql = createAsyncThunk<
-  QueryResult,
+  QueryResult | null,
   { id: string; isFragment: boolean },
   { state: RootState }
->('view/runSql', async (_, { getState, rejectWithValue }) => {
+>('view/runSql', async (_, { getState, dispatch }) => {
   const currentEditingView = selectCurrentEditingView(
     getState(),
   ) as ViewViewModel;
   const { script, sourceId, size, fragment, variables } = currentEditingView;
 
-  if (!sourceId) {
-    return rejectWithValue(i18n.t('view.selectSource'));
-  }
-
-  if (!script.trim()) {
-    return rejectWithValue('');
-  }
-
   try {
-    const { data, warnings } = await request<QueryResult>({
+    if (!sourceId) {
+      throw Error(i18n.t('view.selectSource'));
+    }
+
+    if (!script.trim()) {
+      throw Error(i18n.t('view.sqlRequired'));
+    }
+
+    const { data, warnings } = await request2<QueryResult>({
       url: '/data-provider/execute/test',
       method: 'POST',
       data: {
@@ -169,7 +191,13 @@ export const runSql = createAsyncThunk<
     });
     return { ...data, warnings };
   } catch (error) {
-    return rejectHandle(error, rejectWithValue);
+    dispatch(
+      viewActions.changeCurrentEditingView({
+        stage: ViewViewModelStages.Initialized,
+        error: getErrorMessage(error),
+      }),
+    );
+    return null;
   }
 });
 
@@ -178,7 +206,7 @@ export const saveView = createAsyncThunk<
   SaveViewParams,
   { state: RootState }
 >('view/saveView', async ({ resolve, isSaveAs, currentView }, { getState }) => {
-  const currentEditingView = isSaveAs
+  let currentEditingView = isSaveAs
     ? (currentView as ViewViewModel)
     : (selectCurrentEditingView(getState()) as ViewViewModel);
   const orgId = selectOrgId(getState());
@@ -336,13 +364,15 @@ export const getEditorProvideCompletionItems = createAsyncThunk<
     const variableKeywords = new Set<string>();
 
     if (sourceId) {
-      const databases = selectDatabases(getState(), { name: sourceId });
-      databases?.forEach(db => {
-        dbKeywords.add(db.title as string);
-        db.children?.forEach(table => {
-          tableKeywords.add(table.title as string);
-          table.children?.forEach(column => {
-            schemaKeywords.add(column.title as string);
+      const currentDBSchemas = selectSourceDatabaseSchemas(getState(), {
+        id: sourceId,
+      });
+      currentDBSchemas?.forEach(db => {
+        dbKeywords.add(db.dbName);
+        db.tables?.forEach(table => {
+          tableKeywords.add(table.tableName);
+          table.columns?.forEach(column => {
+            schemaKeywords.add(column.name as string);
           });
         });
       });

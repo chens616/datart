@@ -55,7 +55,7 @@ const config: ChartConfig = {
       ],
     },
     {
-      label: 'column.conditionStyle',
+      label: 'column.conditionalStyle',
       key: 'column',
       comType: 'group',
       rows: [
@@ -95,15 +95,15 @@ const config: ChartConfig = {
                 comType: 'group',
                 rows: [
                   {
-                    label: 'column.conditionStyle',
-                    key: 'conditionStyle',
+                    label: 'column.conditionalStyle',
+                    key: 'conditionalStyle',
                     comType: 'group',
                     options: { expand: true },
                     rows: [
                       {
-                        label: 'column.conditionStylePanel',
-                        key: 'conditionStylePanel',
-                        comType: 'conditionStylePanel',
+                        label: 'column.conditionalStylePanel',
+                        key: 'conditionalStylePanel',
+                        comType: 'conditionalStylePanel',
                       },
                     ],
                   },
@@ -192,10 +192,11 @@ const config: ChartConfig = {
           default: 'default',
           comType: 'select',
           options: {
+            translateItemLabel: true,
             items: [
-              { label: '默认', value: 'default' },
-              { label: '中', value: 'middle' },
-              { label: '小', value: 'small' },
+              { label: '@global@.tableSize.default', value: 'default' },
+              { label: '@global@.tableSize.middle', value: 'middle' },
+              { label: '@global@.tableSize.small', value: 'small' },
             ],
           },
         },
@@ -261,8 +262,8 @@ const config: ChartConfig = {
           sortAndFilter: '排序与过滤',
           enableSort: '开启列排序',
           basicStyle: '基础样式',
-          conditionStyle: '条件样式',
-          conditionStylePanel: '条件样式配置器',
+          conditionalStyle: '条件样式',
+          conditionalStylePanel: '条件样式配置器',
           backgroundColor: '背景颜色',
           align: '对齐方式',
           enableFixedCol: '开启固定列宽',
@@ -281,6 +282,11 @@ const config: ChartConfig = {
           tableSize: '表格大小',
           autoMerge: '自动合并相同内容',
           enableRaw: '使用原始数据',
+        },
+        tableSize: {
+          default: '默认',
+          middle: '中',
+          small: '小',
         },
         paging: {
           title: '分页设置',
@@ -304,8 +310,8 @@ const config: ChartConfig = {
           sortAndFilter: 'Sort and Filter',
           enableSort: 'Enable Sort',
           basicStyle: 'Baisc Style',
-          conditionStyle: 'Column Condition Style',
-          conditionStylePanel: 'Condition Style Panel',
+          conditionalStyle: 'Column Conditional Style',
+          conditionalStylePanel: 'Conditional Style Panel',
           backgroundColor: 'Background Color',
           align: 'Align',
           enableFixedCol: 'Enable Fixed Column',
@@ -318,6 +324,11 @@ const config: ChartConfig = {
           enableBorder: 'Show Border',
           leftFixedColumns: 'Left Fixed Columns',
           rightFixedColumns: 'Right Fixed Columns',
+        },
+        tableSize: {
+          default: 'Default',
+          middle: 'Middle',
+          small: 'Small',
         },
         data: {
           title: 'Table Data Setting',

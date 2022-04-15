@@ -29,6 +29,7 @@ const config: ChartConfig = {
       actions: {
         NUMERIC: ['alias', 'colorize', 'sortable'],
         STRING: ['alias', 'colorize', 'sortable'],
+        DATE: ['alias', 'colorize', 'sortable'],
       },
     },
     {
@@ -114,10 +115,11 @@ const config: ChartConfig = {
           comType: 'select',
           default: 'inside',
           options: {
+            translateItemLabel: true,
             items: [
-              { label: '左', value: 'left' },
-              { label: '右', value: 'right' },
-              { label: '内', value: 'inside' },
+              { label: 'viz.palette.style.position.left', value: 'left' },
+              { label: 'viz.palette.style.position.right', value: 'right' },
+              { label: 'viz.palette.style.position.inside', value: 'inside' },
             ],
           },
         },
@@ -182,15 +184,17 @@ const config: ChartConfig = {
         {
           label: 'legend.position',
           key: 'position',
-          comType: 'select',
+          comType: 'legendPosition',
           default: 'right',
+        },
+        {
+          label: 'legend.height',
+          key: 'height',
+          default: 0,
+          comType: 'inputNumber',
           options: {
-            items: [
-              { label: '右', value: 'right' },
-              { label: '上', value: 'top' },
-              { label: '下', value: 'bottom' },
-              { label: '左', value: 'left' },
-            ],
+            step: 40,
+            min: 0,
           },
         },
         {
@@ -290,6 +294,7 @@ const config: ChartConfig = {
           type: '图例类型',
           selectAll: '图例全选',
           position: '图例位置',
+          height: '图例高度',
         },
         funnel: {
           title: '漏斗图',
@@ -337,6 +342,7 @@ const config: ChartConfig = {
           type: 'Type',
           selectAll: 'Select All',
           position: 'Position',
+          height: 'Height',
         },
         funnel: {
           title: 'Funnel',

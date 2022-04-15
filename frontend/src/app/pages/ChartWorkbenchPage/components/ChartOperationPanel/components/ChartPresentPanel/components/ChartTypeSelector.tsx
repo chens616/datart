@@ -18,26 +18,32 @@
 
 import {
   AreaChartOutlined,
+  CloudDownloadOutlined,
   ConsoleSqlOutlined,
   TableOutlined,
 } from '@ant-design/icons';
+import { Popconfirm } from 'antd';
 import { IW } from 'app/components';
+import useI18NPrefix from 'app/hooks/useI18NPrefix';
 import classnames from 'classnames';
 import { FC, memo, useCallback } from 'react';
 import styled from 'styled-components/macro';
-import { FONT_SIZE_HEADING, SPACE, SPACE_XS } from 'styles/StyleConstants';
+import { FONT_SIZE_HEADING } from 'styles/StyleConstants';
 
 export enum ChartPresentType {
   GRAPH = 'graph',
   RAW = 'raw',
   SQL = 'sql',
+  DOWNLOAD = 'download',
 }
 
 const ChartTypeSelector: FC<{
   type;
-  onChange: (value) => void;
   translate: (title: string) => string;
-}> = memo(({ type, onChange, translate = title => title }) => {
+  onChange: (value) => void;
+  onCreateDownloadDataTask?: () => void;
+}> = memo(({ type, onChange, onCreateDownloadDataTask }) => {
+  const t = useI18NPrefix(`viz.action.common`);
   const typeChange = useCallback(
     type => () => {
       onChange(type);
@@ -68,6 +74,44 @@ const ChartTypeSelector: FC<{
       >
         <ConsoleSqlOutlined />
       </TypeSelector>
+      <TypeSelector
+        fontSize={FONT_SIZE_HEADING}
+        className={classnames({ active: type === ChartPresentType.DOWNLOAD })}
+      >
+        <Popconfirm
+          placement="left"
+          title={t('confirm')}
+          onConfirm={onCreateDownloadDataTask}
+        >
+          <AreaChartOutlined />
+        </Popconfirm>
+      </TypeSelector>
+      <TypeSelector
+        fontSize={FONT_SIZE_HEADING}
+        className={classnames({ active: type === ChartPresentType.RAW })}
+        onClick={typeChange(ChartPresentType.RAW)}
+      >
+        <TableOutlined />
+      </TypeSelector>
+      <TypeSelector
+        fontSize={FONT_SIZE_HEADING}
+        className={classnames({ active: type === ChartPresentType.SQL })}
+        onClick={typeChange(ChartPresentType.SQL)}
+      >
+        <ConsoleSqlOutlined />
+      </TypeSelector>
+      <TypeSelector
+        fontSize={FONT_SIZE_HEADING}
+        className={classnames({ active: type === ChartPresentType.DOWNLOAD })}
+      >
+        <Popconfirm
+          placement="left"
+          title={t('downloadForExcel')}
+          onConfirm={onCreateDownloadDataTask}
+        >
+          <CloudDownloadOutlined />
+        </Popconfirm>
+      </TypeSelector>
     </StyledChartTypeSelector>
   );
 });
@@ -77,7 +121,6 @@ export default ChartTypeSelector;
 const StyledChartTypeSelector = styled.div`
   display: flex;
   justify-content: flex-end;
-  padding: ${SPACE} ${SPACE_XS} 0;
   color: ${p => p.theme.textColorLight};
 `;
 

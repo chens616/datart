@@ -7,6 +7,7 @@ import {
   DeviceType,
   JumpPanel,
   WidgetData,
+  WidgetErrorType,
   WidgetInfo,
   WidgetPanelParams,
 } from 'app/pages/DashBoardPage/pages/Board/slice/types';
@@ -246,35 +247,50 @@ const widgetInfoRecordSlice = createSlice({
         boardId?: string;
         widgetId: string;
         errInfo?: string;
+        errorType: WidgetErrorType;
       }>,
     ) {
-      const { widgetId, errInfo } = action.payload;
-      state[widgetId].errInfo = errInfo;
+      const { widgetId, errInfo, errorType } = action.payload;
+
+      let WidgetRrrInfo = state?.[widgetId]?.errInfo;
+      if (!WidgetRrrInfo) return;
+      if (errInfo) {
+        WidgetRrrInfo[errorType] = errInfo;
+      } else {
+        delete WidgetRrrInfo[errorType];
+      }
     },
   },
   extraReducers: builder => {
     builder.addCase(getEditChartWidgetDataAsync.pending, (state, action) => {
       const { widgetId } = action.meta.arg;
+      if (!state?.[widgetId]) return;
       state[widgetId].loading = true;
     });
     builder.addCase(getEditChartWidgetDataAsync.fulfilled, (state, action) => {
       const { widgetId } = action.meta.arg;
+      if (!state?.[widgetId]) return;
+
       state[widgetId].loading = false;
     });
     builder.addCase(getEditChartWidgetDataAsync.rejected, (state, action) => {
       const { widgetId } = action.meta.arg;
+      if (!state?.[widgetId]) return;
       state[widgetId].loading = false;
     });
     builder.addCase(getEditControllerOptions.pending, (state, action) => {
       const widgetId = action.meta.arg;
+      if (!state?.[widgetId]) return;
       state[widgetId].loading = true;
     });
     builder.addCase(getEditControllerOptions.fulfilled, (state, action) => {
       const widgetId = action.meta.arg;
+      if (!state?.[widgetId]) return;
       state[widgetId].loading = false;
     });
     builder.addCase(getEditControllerOptions.rejected, (state, action) => {
       const widgetId = action.meta.arg;
+      if (!state?.[widgetId]) return;
       state[widgetId].loading = false;
     });
   },
@@ -296,6 +312,7 @@ export const { actions: editWidgetDataActions } = editWidgetDataSlice;
 const filterActions = [
   editBoardStackActions.setBoardToEditStack,
   editBoardStackActions.updateBoard,
+  editBoardStackActions.toggleAllowOverlap,
   editBoardStackActions.updateBoardConfig,
   editBoardStackActions.addWidgets,
   editBoardStackActions.deleteWidgets,
@@ -306,9 +323,11 @@ const filterActions = [
   editBoardStackActions.tabsWidgetRemoveTab,
   editBoardStackActions.updateWidgetConfig,
   editBoardStackActions.updateWidgetsConfig,
-
+  editBoardStackActions.changeWidgetsIndex,
   editBoardStackActions.changeBoardHasQueryControl,
   editBoardStackActions.changeBoardHasResetControl,
+
+  editBoardStackActions.toggleLockWidget,
 ].map(ele => ele.toString());
 const editBoardStackReducer = undoable(editBoardStackSlice.reducer, {
   undoType: BOARD_UNDO.undo,

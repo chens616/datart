@@ -17,33 +17,46 @@
  */
 
 import echartsDefaultTheme from 'app/assets/theme/echarts_default_theme.json';
+import { ChartDataSectionType, FieldFormatType } from 'app/constants';
+import { ChartDataSet, ChartDataSetRow } from 'app/models/ChartDataSet';
+import { ChartDrillOption, DrillMode } from 'app/models/ChartDrillOption';
 import {
-  ChartDataSet,
-  ChartDataSetRow,
-} from 'app/components/ChartGraph/models/ChartDataSet';
-import {
+  AxisLabel,
+  AxisLineStyle,
   ChartConfig,
   ChartDataConfig,
   ChartDataSectionField,
-  ChartDataSectionType,
   ChartStyleConfig,
-  FieldFormatType,
+  ChartStyleSectionGroup,
+  FontStyle,
+  GridStyle,
   IFieldFormatConfig,
-  SortActionType,
+  LineStyle,
+  MarkArea,
+  MarkDataConfig,
+  MarkLine,
+  XAxis,
 } from 'app/types/ChartConfig';
-import { ChartStyleConfigDTO } from 'app/types/ChartConfigDTO';
+import {
+  ChartCommonConfig,
+  ChartStyleConfigDTO,
+} from 'app/types/ChartConfigDTO';
 import {
   ChartDatasetMeta,
   IChartDataSet,
   IChartDataSetRow,
 } from 'app/types/ChartDataSet';
 import ChartMetadata from 'app/types/ChartMetadata';
+import { ECharts } from 'echarts';
+import { ECBasicOption } from 'echarts/types/dist/shared';
 import { NumberUnitKey, NumericUnitDescriptions } from 'globalConstants';
 import moment from 'moment';
 import { Debugger } from 'utils/debugger';
 import { isEmpty, isEmptyArray, meanValue, pipe } from 'utils/object';
+import { TableColumnsList } from '../components/ChartGraph/BasicTableChart/types';
 import {
   flattenHeaderRowsWithoutGroupRow,
+  getAxisLengthByConfig,
   getColumnRenderOriginName,
   getRequiredAggregatedSections,
   getRequiredGroupedSections,
@@ -222,6 +235,7 @@ function currencyFormater(
     style: 'currency',
     currency: config?.currency || 'CNY',
     minimumFractionDigits: config?.decimalPlaces,
+    maximumFractionDigits: config?.decimalPlaces,
     useGrouping: config?.useThousandSeparator,
   }).format(value / realUnit)} ${
     NumericUnitDescriptions.get(config?.unitKey || NumberUnitKey.None)?.[1]
@@ -286,18 +300,18 @@ function dateFormater(
  * console.log(colorList); // ["#298ffe","#dae9ff","#fe705a","#ffdcdc","#751adb","#8663d7","#15AD31","#FAD414","#E62412"]
  *
  * @export
- * @return {*} default color array
+ * @return {string[]} default color array
  */
-export function getDefaultThemeColor() {
+export function getDefaultThemeColor(): string[] {
   return echartsDefaultTheme.color;
 }
 
 /**
  * [中文] 使用路径语法获取配置信息，此方法已过时，请参考方法getStyles
  * </br>
- * [EN] Get config info by value path, please use getStyles instread
+ * [EN] Get config info by value path, please use getStyles instead
  *
- * @deprecated This function will be removed in next versiion, please use @see {@link getStyles} instread
+ * @deprecated This function will be removed in next version, please use @see {@link getStyles} instread
  * @param {ChartStyleConfig[]} styleConfigs
  * @param {string[]} paths
  * @return {*}  {*}
@@ -312,9 +326,9 @@ export function getStyleValue(
 /**
  * [中文] 使用路径语法获取配置信息，此方法已过时，请参考方法getStyles
  * </br>
- * [EN] Get setting config info by value path, please use getStyles instread
+ * [EN] Get setting config info by value path, please use getStyles instead
  *
- * @deprecated This function will be removed in next versiion, please use @see {@link getStyles} instread
+ * @deprecated This function will be removed in next version, please use @see {@link getStyles} instread
  * @export
  * @param {ChartStyleConfig[]} configs
  * @param {string} path
@@ -332,9 +346,9 @@ export function getSettingValue(
 /**
  * [中文] 使用路径语法获取配置信息，此方法已过时，请参考方法getStyles
  * </br>
- * [EN] Get setting config info by value path, please use getStyles instread
+ * [EN] Get setting config info by value path, please use getStyles instead
  *
- * @deprecated This function will be removed in next versiion, please use @see {@link getStyles} instread
+ * @deprecated This function will be removed in next version, please use @see {@link getStyles} instead
  * @export
  * @param {ChartStyleConfig[]} styles
  * @param {string} groupPath
@@ -390,7 +404,7 @@ export function getStyles(
 /**
  * [中文] 通过数组路径语法，获取对应的配置信息
  * </br>
- * [EN] Get style config value base funtion with default target key
+ * [EN] Get style config value base function with default target key
  *
  * @example
  *
@@ -430,43 +444,25 @@ export function getValue(
   }
 }
 
-export function getCustomSortableColumns(columns, dataConfigs) {
-  const sortConfigs = dataConfigs
-    .filter(
-      c =>
-        c.type === ChartDataSectionType.AGGREGATE ||
-        c.type === ChartDataSectionType.GROUP,
-    )
-    .flatMap(config => config.rows || []);
-
-  if (!sortConfigs || sortConfigs.length === 0) {
-    return columns;
-  }
-  const sortConfig = sortConfigs[0];
-  if (!sortConfig.colName || !sortConfig.sort) {
-    return columns;
-  }
-  const sort = sortConfig.sort;
-  if (!sort || sort.type !== SortActionType.CUSTOMIZE) {
-    return columns;
-  }
-  const sortValues = sortConfig.sort.value || [];
-  return columns.sort(
-    (prev, next) =>
-      sortValues.indexOf(prev[sortConfig.colName]) -
-      sortValues.indexOf(next[sortConfig.colName]),
-  );
-}
-
+/**
+ * @deprecated to be remove in next release
+ *
+ * @export
+ * @param {*} settingConfigs
+ * @param {*} dataColumns
+ * @param {*} dataConfig
+ * @param {*} isHorizonDisplay
+ * @return {*}
+ */
 export function getReference(
   settingConfigs,
   dataColumns,
   dataConfig,
   isHorizonDisplay,
 ) {
-  const referenceTabs = getSettingValue(
+  const referenceTabs = getValue(
     settingConfigs,
-    'reference.panel.configuration',
+    ['reference', 'panel', 'configuration'],
     'rows',
   );
 
@@ -482,14 +478,14 @@ export function getReference(
 }
 
 export function getReference2(
-  settingConfigs,
-  dataSetRows: IChartDataSetRow<string>[],
-  dataConfig,
-  isHorizonDisplay,
-) {
-  const referenceTabs = getSettingValue(
+  settingConfigs: ChartStyleConfig[],
+  dataSetRows: IChartDataSet<string>,
+  dataConfig: ChartDataSectionField,
+  isHorizonDisplay: boolean,
+): { markLine: MarkLine; markArea: MarkArea } {
+  const referenceTabs: ChartStyleSectionGroup[] = getValue(
     settingConfigs,
-    'reference.panel.configuration',
+    ['reference', 'panel', 'configuration'],
     'rows',
   );
 
@@ -500,10 +496,25 @@ export function getReference2(
       dataConfig,
       isHorizonDisplay,
     ),
-    markArea: getMarkArea2(referenceTabs, dataSetRows, isHorizonDisplay),
+    markArea: getMarkArea2(
+      referenceTabs,
+      dataSetRows,
+      dataConfig,
+      isHorizonDisplay,
+    ),
   };
 }
 
+/**
+ * @deprecated to be remove in next release
+ *
+ * @export
+ * @param {*} settingConfigs
+ * @param {*} dataColumns
+ * @param {*} dataConfig
+ * @param {*} isHorizonDisplay
+ * @return {*}
+ */
 function getMarkLine(refTabs, dataColumns, dataConfig, isHorizonDisplay) {
   const markLineData = refTabs
     ?.reduce((acc, cur) => {
@@ -529,6 +540,16 @@ function getMarkLine(refTabs, dataColumns, dataConfig, isHorizonDisplay) {
   };
 }
 
+/**
+ * @deprecated to be remove in next release
+ *
+ * @export
+ * @param {*} settingConfigs
+ * @param {*} dataColumns
+ * @param {*} dataConfig
+ * @param {*} isHorizonDisplay
+ * @return {*}
+ */
 function getMarkLineData(
   mark,
   dataColumns,
@@ -585,17 +606,16 @@ function getMarkLineData(
 }
 
 function getMarkLine2(
-  refTabs,
+  refTabs: ChartStyleSectionGroup[],
   dataSetRows: IChartDataSetRow<string>[],
-  dataConfig,
-  isHorizonDisplay,
-) {
+  dataConfig: ChartDataSectionField,
+  isHorizonDisplay: boolean,
+): MarkLine {
   const markLineData = refTabs
     ?.reduce((acc, cur) => {
       const markLineConfigs = cur?.rows?.filter(r => r.key === 'markLine');
-      acc.push(...markLineConfigs);
-      return acc;
-    }, [])
+      return acc.concat(markLineConfigs);
+    }, [] as Array<ChartStyleSectionGroup | undefined>)
     .map(ml => {
       return getMarkLineData2(
         ml,
@@ -610,35 +630,56 @@ function getMarkLine2(
     .filter(Boolean);
 
   return {
-    data: markLineData,
+    data: markLineData as MarkDataConfig[],
   };
 }
 
 function getMarkLineData2(
-  mark,
+  mark: ChartStyleSectionGroup | undefined,
   dataSetRows: IChartDataSetRow<string>[],
-  valueTypeKey,
-  constantValueKey,
-  metricKey,
-  dataConfig,
-  isHorizonDisplay,
-) {
-  const name = mark.label;
-  const valueKey = isHorizonDisplay ? 'xAxis' : 'yAxis';
-  const show = getSettingValue(mark.rows, 'showLabel', 'value');
-  const enableMarkLine = getSettingValue(mark.rows, 'enableMarkLine', 'value');
-  const position = getSettingValue(mark.rows, 'position', 'value');
-  const font = getSettingValue(mark.rows, 'font', 'value');
-  const lineStyle = getSettingValue(mark.rows, 'lineStyle', 'value');
-  const valueType = getSettingValue(mark.rows, valueTypeKey, 'value');
-  const metricUid = getSettingValue(mark.rows, metricKey, 'value');
+  valueTypeKey: string,
+  constantValueKey: string,
+  metricKey: string,
+  dataConfig: ChartDataSectionField,
+  isHorizonDisplay: boolean,
+): MarkDataConfig | null {
+  if (!mark) return null;
+  const name: string = mark.label;
+  const valueKey: 'xAxis' | 'yAxis' = isHorizonDisplay ? 'xAxis' : 'yAxis';
+
+  const [
+    show,
+    enableMarkLine,
+    position,
+    font,
+    lineStyle,
+    valueType,
+    metricUid,
+    constantValue,
+  ] = getStyles(
+    [mark],
+    ['markLine'],
+    [
+      'showLabel',
+      'enableMarkLine',
+      'position',
+      'font',
+      'lineStyle',
+      valueTypeKey,
+      metricKey,
+      constantValueKey,
+    ],
+  );
+
+  if (!enableMarkLine) {
+    return null;
+  }
 
   const metricDatas =
     dataConfig.uid === metricUid
       ? dataSetRows.map(d => +d.getCell(dataConfig))
       : [];
-  const constantValue = getSettingValue(mark.rows, constantValueKey, 'value');
-  let yAxis = 0;
+  let yAxis: number = 0;
   switch (valueType) {
     case 'constant':
       yAxis = constantValue;
@@ -653,11 +694,6 @@ function getMarkLineData2(
       yAxis = Math.min(...metricDatas);
       break;
   }
-
-  if (!enableMarkLine) {
-    return null;
-  }
-
   return {
     [valueKey]: yAxis,
     name,
@@ -671,31 +707,50 @@ function getMarkLineData2(
 }
 
 function getMarkAreaData2(
-  mark,
+  mark: ChartStyleSectionGroup | undefined,
   dataSetRows: IChartDataSetRow<string>[],
-  valueTypeKey,
-  constantValueKey,
-  metricKey,
-  isHorizonDisplay,
-) {
-  const valueKey = isHorizonDisplay ? 'xAxis' : 'yAxis';
-  const show = getSettingValue(mark.rows, 'showLabel', 'value');
-  const enableMarkArea = getSettingValue(mark.rows, 'enableMarkArea', 'value');
-  const position = getSettingValue(mark.rows, 'position', 'value');
-  const font = getSettingValue(mark.rows, 'font', 'value');
-  const borderStyle = getSettingValue(mark.rows, 'borderStyle', 'value');
-  const opacity = getSettingValue(mark.rows, 'opacity', 'value');
-  const backgroundColor = getSettingValue(
-    mark.rows,
-    'backgroundColor',
-    'value',
+  valueTypeKey: string,
+  constantValueKey: string,
+  metricKey: string,
+  dataConfig: ChartDataSectionField,
+  isHorizonDisplay: boolean,
+): MarkDataConfig | null {
+  if (!mark) return null;
+  const valueKey: 'xAxis' | 'yAxis' = isHorizonDisplay ? 'xAxis' : 'yAxis';
+  const [
+    metric,
+    show,
+    enableMarkArea,
+    position,
+    font,
+    borderStyle,
+    opacity,
+    backgroundColor,
+    valueType,
+    constantValue,
+  ] = getStyles(
+    [mark],
+    ['markArea'],
+    [
+      metricKey,
+      'showLabel',
+      'enableMarkArea',
+      'position',
+      'font',
+      'borderStyle',
+      'opacity',
+      'backgroundColor',
+      valueTypeKey,
+      constantValueKey,
+    ],
   );
-  const name = mark.value;
-  const valueType = getSettingValue(mark.rows, valueTypeKey, 'value');
-  const metric = getSettingValue(mark.rows, metricKey, 'value');
-  const metricDatas = dataSetRows.map(d => +d.getCellByKey(metric));
-  const constantValue = getSettingValue(mark.rows, constantValueKey, 'value');
-  let yAxis = 0;
+
+  const name: string = mark.value;
+  const metricDatas =
+    dataConfig.uid === metric
+      ? dataSetRows.map(d => +d.getCell(dataConfig))
+      : [];
+  let yAxis: number = 0;
   switch (valueType) {
     case 'constant':
       yAxis = constantValue;
@@ -711,7 +766,7 @@ function getMarkAreaData2(
       break;
   }
 
-  if (!enableMarkArea) {
+  if (!enableMarkArea || !Number.isFinite(yAxis) || Number.isNaN(yAxis)) {
     return null;
   }
 
@@ -733,6 +788,16 @@ function getMarkAreaData2(
   };
 }
 
+/**
+ * @deprecated to be remove in next release
+ *
+ * @export
+ * @param {*} settingConfigs
+ * @param {*} dataColumns
+ * @param {*} dataConfig
+ * @param {*} isHorizonDisplay
+ * @return {*}
+ */
 function getMarkAreaData(
   mark,
   dataColumns,
@@ -796,6 +861,16 @@ function getMarkAreaData(
   };
 }
 
+/**
+ * @deprecated to be remove in next release
+ *
+ * @export
+ * @param {*} settingConfigs
+ * @param {*} dataColumns
+ * @param {*} dataConfig
+ * @param {*} isHorizonDisplay
+ * @return {*}
+ */
 function getMarkArea(refTabs, dataColumns, isHorizonDisplay) {
   const refAreas = refTabs?.reduce((acc, cur) => {
     const markLineConfigs = cur?.rows?.filter(r => r.key === 'markArea');
@@ -824,15 +899,16 @@ function getMarkArea(refTabs, dataColumns, isHorizonDisplay) {
 }
 
 function getMarkArea2(
-  refTabs,
+  refTabs: ChartStyleSectionGroup[],
   dataSetRows: IChartDataSetRow<string>[],
-  isHorizonDisplay,
-) {
+  dataConfig: ChartDataSectionField,
+  isHorizonDisplay: boolean,
+): MarkArea {
   const refAreas = refTabs?.reduce((acc, cur) => {
     const markLineConfigs = cur?.rows?.filter(r => r.key === 'markArea');
-    acc.push(...markLineConfigs);
-    return acc;
-  }, []);
+    return acc.concat(markLineConfigs);
+  }, [] as Array<ChartStyleSectionGroup | undefined>);
+
   return {
     data: refAreas
       ?.map(mark => {
@@ -844,17 +920,18 @@ function getMarkArea2(
               `${prefix}ValueType`,
               `${prefix}ConstantValue`,
               `${prefix}Metric`,
+              dataConfig,
               isHorizonDisplay,
             );
           })
           .filter(Boolean);
-        return markAreaData;
+        return markAreaData as MarkDataConfig[];
       })
-      .filter(m => Boolean(m?.length)),
+      .filter(m => m?.length === 2),
   };
 }
 
-export function getAxisLine(show, lineStyle) {
+export function getAxisLine(show: boolean, lineStyle?): AxisLineStyle {
   return {
     show,
     lineStyle,
@@ -862,34 +939,46 @@ export function getAxisLine(show, lineStyle) {
 }
 
 export function getAxisLabel(
-  show,
-  font: { fontFamily; fontSize; color },
-  interval = null,
-  rotate = null,
-) {
+  show: boolean,
+  font: FontStyle,
+  interval: string | null = null,
+  rotate: number | null = null,
+  overflow: string | null = null,
+): AxisLabel {
   return {
     show,
     interval,
     rotate,
+    overflow,
     ...font,
   };
 }
 
-export function getSplitLine(show, lineStyle) {
+export function getSplitLine(
+  show: boolean,
+  lineStyle: LineStyle,
+): AxisLineStyle {
   return {
     show,
     lineStyle,
   };
 }
 
-export function getAxisTick(show, lineStyle) {
+export function getAxisTick(
+  show: boolean,
+  lineStyle: LineStyle,
+): AxisLineStyle {
   return {
     show,
     lineStyle,
   };
 }
 
-export function getNameTextStyle(fontFamily, fontSize, color) {
+export function getNameTextStyle(
+  fontFamily: string,
+  fontSize: number,
+  color: string,
+): { fontFamily: string; fontSize: number; color: string } {
   return {
     fontFamily,
     fontSize,
@@ -906,16 +995,17 @@ export function getNameTextStyle(fontFamily, fontSize, color) {
  * @template T
  * @param {T[][]} [datas]
  * @param {ChartDatasetMeta[]} [metas]
- * @param {ChartDataConfig[]} [sortedConfigs]
+ * @param {ChartDataConfig[]} [dataConfigs]
  * @return {*}  {IChartDataSet<T>}
  */
 export function transformToDataSet<T>(
   datas?: T[][],
   metas?: ChartDatasetMeta[],
-  sortedConfigs?: ChartDataConfig[],
+  dataConfigs?: ChartDataConfig[],
 ): IChartDataSet<T> {
-  const ds = new ChartDataSet(datas || [], metas || []);
-  ds.sortBy(sortedConfigs || []);
+  const fields = (dataConfigs || []).flatMap(config => config.rows || []);
+  const ds = new ChartDataSet(datas || [], metas || [], fields || []);
+  ds.sortBy(dataConfigs || []);
   return ds;
 }
 
@@ -924,7 +1014,7 @@ export function transformToDataSet<T>(
  * </br>
  * [EN] transform dataset to object array, please use transformToDataSet instead
  *
- * @deprecated shoule use DataSet model, @see {@link transformToDataSet}
+ * @deprecated should use DataSet model, @see {@link transformToDataSet}
  * @description
  * Support:
  *  1. Case Insensitive to get value
@@ -956,7 +1046,7 @@ export function transformToObjectArray(
     'transformToObjectArray',
     () => {
       const result: any[] = Array.apply(null, Array(columns.length));
-      for (let j = 0, outterLength = result.length; j < outterLength; j++) {
+      for (let j = 0, outerLength = result.length; j < outerLength; j++) {
         let objCol: any = {};
         for (let i = 0, innerLength = metas.length; i < innerLength; i++) {
           const key = metas?.[i]?.name;
@@ -1008,12 +1098,8 @@ export function getUnusedHeaderRows(
   allRows: Array<{
     colName?: string;
   }>,
-  originalRows: Array<{
-    colName?: string;
-    isGroup?: boolean;
-    children?: any[];
-  }>,
-): any[] {
+  originalRows: Array<TableColumnsList>,
+): TableColumnsList[] {
   const oldFlattenedColNames = originalRows
     .flatMap(row => flattenHeaderRowsWithoutGroupRow(row))
     .map(r => r.colName);
@@ -1025,6 +1111,14 @@ export function getUnusedHeaderRows(
   }, []);
 }
 
+/**
+ * @deprecated to be remove in next release
+ *
+ * @export
+ * @param {[]} dataset
+ * @param {ChartDataSectionField} [config]
+ * @return {*}
+ */
 export function getDataColumnMaxAndMin(
   dataset: [],
   config?: ChartDataSectionField,
@@ -1041,7 +1135,7 @@ export function getDataColumnMaxAndMin(
 export function getDataColumnMaxAndMin2(
   chartDataSetRows: IChartDataSetRow<string>[],
   config?: ChartDataSectionField,
-) {
+): { min: number; max: number } {
   if (!config || !chartDataSetRows?.length) {
     return { min: 0, max: 100 };
   }
@@ -1054,10 +1148,10 @@ export function getDataColumnMaxAndMin2(
 }
 
 export function getSeriesTooltips4Scatter(
-  params,
-  tooltipItemConfigs,
+  params: Array<{ value: string | number }>,
+  tooltipItemConfigs: ChartDataSectionField[],
   start?: number,
-) {
+): string[] {
   const dataValues = params?.[0]?.value;
   return tooltipItemConfigs.map((config, index) =>
     valueFormatter(config, dataValues?.[!!start ? start + index : index]),
@@ -1096,7 +1190,7 @@ export function getSeriesTooltips4Rectangular2(
     .concat(sizeConfigs || [])
     .concat(infoConfigs || [])
     .map(config =>
-      valueFormatter(config, row?.[chartDataSet.getFieldKey(config)]),
+      valueFormatter(config, row?.[chartDataSet.getFieldOriginKey(config)]),
     );
   return tooltips.join('<br />');
 }
@@ -1123,7 +1217,7 @@ export function getSeriesTooltips4Polar2(
     .concat(sizeConfigs || [])
     .concat(infoConfigs || [])
     .map(config =>
-      valueFormatter(config, row?.[chartDataSet.getFieldKey(config)]),
+      valueFormatter(config, row?.[chartDataSet.getFieldOriginKey(config)]),
     );
   return tooltips.join('<br />');
 }
@@ -1184,10 +1278,10 @@ export function valueFormatter(
 
 export function getScatterSymbolSizeFn(
   valueIndex: number,
-  max,
-  min,
+  max: number,
+  min: number,
   cycleRatio?: number,
-) {
+): (val) => number {
   min = Math.min(0, min);
   const scaleRatio = cycleRatio || 1;
   const defaultScatterPointPixelSize = 10;
@@ -1204,7 +1298,7 @@ export function getScatterSymbolSizeFn(
   };
 }
 
-export function getGridStyle(styles) {
+export function getGridStyle(styles: ChartStyleConfig[]): GridStyle {
   const [containLabel, left, right, bottom, top] = getStyles(
     styles,
     ['margin'],
@@ -1213,20 +1307,24 @@ export function getGridStyle(styles) {
   return { left, right, bottom, top, containLabel };
 }
 
-// TODO(Stephen): tobe used chart DataSetRow model for all charts
-export function getExtraSeriesRowData(data) {
+// TODO(Stephen): to be used chart DataSetRow model for all charts
+export function getExtraSeriesRowData(
+  data: IChartDataSetRow<string> | { [key: string]: any },
+): { rowData: { [key: string]: any } } {
   if (data instanceof ChartDataSetRow) {
     return {
-      rowData: data?.convertToObject(),
+      // NOTE: row data should be case sensitive except for data chart
+      rowData: data?.convertToCaseSensitiveObject(),
     };
   }
-
   return {
     rowData: data,
   };
 }
 
-export function getExtraSeriesDataFormat(format?: IFieldFormatConfig) {
+export function getExtraSeriesDataFormat(format?: IFieldFormatConfig): {
+  format: IFieldFormatConfig | undefined;
+} {
   return {
     format,
   };
@@ -1234,42 +1332,19 @@ export function getExtraSeriesDataFormat(format?: IFieldFormatConfig) {
 
 export function getColorizeGroupSeriesColumns(
   chartDataSet: IChartDataSet<string>,
-  groupByKey: string,
-  xAxisColumnName: string,
-  aggregateKeys: string[],
-  infoColumnNames: string[],
-) {
-  const groupedDataColumnObject = chartDataSet?.reduce((acc, cur) => {
-    const colKey = cur.getCellByKey(groupByKey) || 'defaultGroupKey';
-
-    if (!acc[colKey]) {
-      acc[colKey] = [];
-    }
-    const value = aggregateKeys
-      .concat([xAxisColumnName])
-      .concat(infoColumnNames || [])
-      .concat([groupByKey])
-      .reduce((a, k) => {
-        a[k] = cur.getCellByKey(k);
-        return a;
-      }, {});
-    acc[colKey].push(value);
-    return acc;
-  }, {});
-
-  let collection = [] as any;
-  Object.entries(groupedDataColumnObject).forEach(([k, v]) => {
+  groupConfig: ChartDataSectionField,
+): { [x: string]: IChartDataSet<string> }[] {
+  return Object.entries(chartDataSet.groupBy(groupConfig)).map(([k, v]) => {
     let a = {};
     a[k] = v;
-    collection.push(a);
+    return a;
   });
-  return collection;
 }
 
 /**
  * [中文] 是否满足当前meta中标识的限制要求，以满足图表绘制
  * </br>
- * [EN] Check if current config with requried fields match the chart basic requirement of meta info.
+ * [EN] Check if current config with required fields match the chart basic requirement of meta info.
  *
  * @example
  *
@@ -1332,3 +1407,175 @@ export function isMatchRequirement(
     );
   });
 }
+
+// 获取是否展示刻度
+export const getIntervalShow = (interval): boolean =>
+  interval !== 'auto' && interval !== null;
+
+// 判断overflow 条件是否已生效
+export function hadAxisLabelOverflowConfig(
+  options?: ECBasicOption,
+  horizon: boolean = false,
+): boolean {
+  if (!options) return false;
+  const axisName = !horizon ? 'xAxis' : 'yAxis';
+
+  const axisLabelOpts = (options as unknown as any)[axisName]?.[0]?.axisLabel;
+  if (!axisLabelOpts) return false;
+
+  const { overflow, interval, show } = axisLabelOpts;
+
+  return !!(show && overflow && getIntervalShow(interval));
+}
+
+// 处理溢出情况
+export function setOptionsByAxisLabelOverflow(config: ChartCommonConfig) {
+  const { chart, xAxis, yAxis, grid, series, horizon = false } = config;
+
+  const commonOpts = {
+    grid,
+    xAxis,
+    yAxis,
+    series,
+  };
+
+  // 如果是x轴需要截断，则取x轴数据
+  const axisOpts = (!horizon ? xAxis : yAxis) as XAxis;
+  const axisName = !horizon ? 'xAxis' : 'yAxis';
+
+  const data = axisOpts.data || [];
+
+  const dataLength = data.length;
+
+  // 拿到截断配置
+  const overflow = axisOpts.axisLabel?.overflow;
+  const show = axisOpts.axisLabel?.show;
+  // 是否展示刻度，非刻度使用默认样式
+
+  const showInterval = getIntervalShow(axisOpts.axisLabel?.interval);
+
+  // 不展示刻度
+  if (!show) return commonOpts;
+  // 数据为空
+  if (!dataLength) return commonOpts;
+
+  commonOpts[axisName].axisLabel.hideOverlap = true;
+  commonOpts[axisName].axisLabel.overflow = overflow;
+
+  // 如果overflow为截断，则使用每段刻度来响应tooltip
+  // 不破坏原有展示逻辑
+  if (showInterval && overflow === 'truncate') {
+    commonOpts[axisName].axisPointer = {
+      show: true,
+      type: 'shadow',
+    };
+  }
+
+  // 获取x/y轴在model上的信息
+  // @ts-ignore
+  const axisModel = chart.getModel()?.getComponent(axisName);
+
+  // 处理 每个刻度宽度
+  const setWidth = width => {
+    // 水平图表使用默认宽度
+    if (horizon) return 40;
+    return parseInt(String((width - dataLength * 8) / dataLength));
+  };
+  // model 渲染未完成的兼容性方案，一般只在图表初始化阶段，还没有拿到model。
+  // 一般只会运行一次
+  // 拿到model后就可使用更加精确的坐标轴宽高度等信息，所以处理可以略粗略
+  const handlerWhenChartUnFinished = () => {
+    commonOpts[axisName].axisLabel.width = showInterval
+      ? setWidth(getAxisLengthByConfig(config))
+      : void 0;
+    return commonOpts;
+  };
+
+  // model未获取到，原因： 未渲染完成
+  if (!axisModel) {
+    handlerWhenChartUnFinished();
+    return commonOpts;
+  }
+  // @ts-ignore
+  const axisView = chart.getViewOfComponentModel(axisModel);
+
+  const axisRect = axisView?.group?.getBoundingRect();
+
+  if (!axisRect) {
+    handlerWhenChartUnFinished();
+    return commonOpts;
+  }
+
+  commonOpts[axisName].axisLabel.width = showInterval
+    ? setWidth(axisRect.width)
+    : void 0;
+
+  return commonOpts;
+}
+
+export const getAutoFunnelTopPosition = (config: {
+  chart: ECharts;
+  height: number;
+  sort: 'ascending' | 'descending' | 'none';
+  legendPos: string;
+}): number => {
+  const { chart, height, sort, legendPos } = config;
+  if (legendPos !== 'left' && legendPos !== 'right') return 8;
+  if (!height) return 16;
+  // 升序
+  if (sort === 'ascending') return 16;
+
+  const chartHeight = chart.getHeight();
+  if (!chartHeight) return 16;
+  // 24 marginBottom
+  return chartHeight - 24 - height;
+};
+
+/**
+ * Get Fields when data section is drillable
+ *
+ * @param {ChartDataConfig[]} configs
+ * @param {ChartDrillOption} option
+ * @return {*}  {ChartDataSectionField[]}
+ */
+export const getDrillableRows = (
+  configs: ChartDataConfig[],
+  option?: ChartDrillOption,
+): ChartDataSectionField[] => {
+  return configs
+    ?.filter(c => c.type === ChartDataSectionType.GROUP)
+    .flatMap(config => {
+      if (Boolean(config.drillable)) {
+        if (
+          !option ||
+          option?.mode === DrillMode.Normal ||
+          !option?.getCurrentFields()
+        ) {
+          return config.rows?.[0] || [];
+        }
+        return (
+          config.rows?.filter(
+            f =>
+              !option?.getCurrentFields() ||
+              Boolean(option?.getCurrentFields()?.some(df => df.uid === f.uid)),
+          ) || []
+        );
+      }
+      return config.rows || [];
+    });
+};
+
+/**
+ * Get all Drill Paths
+ *
+ * @param {ChartDataConfig[]} configs
+ * @return {*}  {ChartDataSectionField[]}
+ */
+export const getDrillPaths = (
+  configs?: ChartDataConfig[],
+): ChartDataSectionField[] => {
+  return (configs || [])
+    ?.filter(c => c.type === ChartDataSectionType.GROUP)
+    ?.filter(d => Boolean(d.drillable))
+    ?.flatMap(r => r.rows || []);
+};

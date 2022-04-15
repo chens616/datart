@@ -16,11 +16,8 @@
  * limitations under the License.
  */
 
-import {
-  ChartStyleConfig,
-  ChartStyleSectionComponentType,
-  ChartStyleSectionRow,
-} from 'app/types/ChartConfig';
+import { ChartStyleSectionComponentType } from 'app/constants';
+import { ChartStyleConfig, ChartStyleSectionRow } from 'app/types/ChartConfig';
 import { updateBy } from 'app/utils/mutation';
 import { FC, memo, useEffect } from 'react';
 import styled from 'styled-components/macro';
@@ -37,13 +34,13 @@ import {
   BasicFont,
   BasicFontFamilySelector,
   BasicFontSizeSelector,
+  BasicFontStyle,
+  BasicFontWeight,
   BasicInput,
   BasicInputNumber,
   BasicInputPercentage,
-  BasicLegendType,
   BasicLine,
   BasicMarginWidth,
-  BasicNameLocation,
   BasicRadio,
   BasicSelector,
   BasicSlider,
@@ -52,10 +49,15 @@ import {
   BasicUnControlledTabPanel,
 } from '../Basic';
 import {
-  ConditionStylePanel,
+  ConditionalStylePanel,
   DataReferencePanel,
   FontAlignment,
+  LabelPosition,
+  LegendPosition,
+  LegendType,
   ListTemplatePanel,
+  NameLocation,
+  ScorecardConditionalStylePanel,
   UnControlledTableHeaderPanel,
 } from '../Customize';
 import { FormGeneratorLayoutProps } from '../types';
@@ -144,6 +146,10 @@ const ItemLayout: FC<FormGeneratorLayoutProps<ChartStyleConfig>> = memo(
           return <BasicFontSizeSelector {...props} />;
         case ChartStyleSectionComponentType.FONTCOLOR:
           return <BasicColorSelector {...props} />;
+        case ChartStyleSectionComponentType.FONTSTYLE:
+          return <BasicFontStyle {...props} />;
+        case ChartStyleSectionComponentType.FONTWEIGHT:
+          return <BasicFontWeight {...props} />;
         case ChartStyleSectionComponentType.INPUTNUMBER:
           return <BasicInputNumber {...props} />;
         case ChartStyleSectionComponentType.INPUTPERCENTAGE:
@@ -160,8 +166,8 @@ const ItemLayout: FC<FormGeneratorLayoutProps<ChartStyleConfig>> = memo(
           return <DataReferencePanel {...props} />;
         case ChartStyleSectionComponentType.TABLEHEADER:
           return <UnControlledTableHeaderPanel {...props} />;
-        case ChartStyleSectionComponentType.CONDITIONSTYLE:
-          return <ConditionStylePanel {...props} />;
+        case ChartStyleSectionComponentType.CONDITIONALSTYLE:
+          return <ConditionalStylePanel {...props} />;
         case ChartStyleSectionComponentType.GROUP:
           return <GroupLayout {...props} />;
         case ChartStyleSectionComponentType.TEXT:
@@ -171,16 +177,22 @@ const ItemLayout: FC<FormGeneratorLayoutProps<ChartStyleConfig>> = memo(
         case ChartStyleSectionComponentType.FontAlignment:
           return <FontAlignment {...props} />;
         case ChartStyleSectionComponentType.NameLocation:
-          return <BasicNameLocation {...props} />;
+          return <NameLocation {...props} />;
+        case ChartStyleSectionComponentType.LabelPosition:
+          return <LabelPosition {...props} />;
         case ChartStyleSectionComponentType.LegendType:
-          return <BasicLegendType {...props} />;
+          return <LegendType {...props} />;
+        case ChartStyleSectionComponentType.LegendPosition:
+          return <LegendPosition {...props} />;
+        case ChartStyleSectionComponentType.ScorecardConditionalStyle:
+          return <ScorecardConditionalStylePanel {...props} />;
         default:
           return <div>{`no matched component comType of ${data.comType}`}</div>;
       }
     };
 
     return (
-      <StyledItemLayout flatten={flatten}>
+      <StyledItemLayout className="chart-config-item-layout" flatten={flatten}>
         {renderBasicComponent()}
       </StyledItemLayout>
     );
@@ -192,4 +204,5 @@ export default ItemLayout;
 
 const StyledItemLayout = styled.div<{ flatten?: boolean }>`
   padding: ${p => (p.flatten ? 0 : SPACE)};
+  user-select: none;
 `;

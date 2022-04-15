@@ -2,6 +2,7 @@
   "global": {
     "copy": "copy",
     "tokenExpired": "Token expired, please log in",
+    "401": "Not logged in or token expired, please log in again",
     "title": {
       "action": "Action"
     },
@@ -17,7 +18,8 @@
       "close": "Close",
       "saveAs": "Save as",
       "cancel": "Cancel",
-      "ok": "OK"
+      "ok": "OK",
+      "shortcuts": "Shortcuts"
     },
     "operation": {
       "archiveConfirm": "Archive confirm",
@@ -162,7 +164,12 @@
           "confirmPassword": "Confirm password"
         },
         "switchLanguage": {
-          "title": "language"
+          "title": "Language"
+        },
+        "switchTheme": {
+          "title": "Theme",
+          "light": "Light",
+          "dark": "Dark"
         },
         "logout": {
           "title": "Logout"
@@ -304,6 +311,7 @@
           "SUFFIX_LIKE": "Suffix Contain",
           "SUFFIX_NOT_LIKE": "Not Suffix Contain",
           "BETWEEN": "Between",
+          "NOT_BETWEEN": "Not Between",
           "IN": "In",
           "NOT_IN": "Not In",
           "LT": "Less Than",
@@ -448,6 +456,7 @@
         "open": "Open",
         "close": "Close",
         "cancel": "Cancel",
+        "downloadList": "Download list",
         "lang": {
           "zh": "zh",
           "en": "en"
@@ -500,7 +509,7 @@
             }
           }
         },
-        "conditionStyleTable": {
+        "conditionalStyleTable": {
           "btn": {
             "add": "Add",
             "edit": "Edit",
@@ -508,7 +517,7 @@
             "confirm": "Confirm"
           },
           "modal": {
-            "title": "Condition Style",
+            "title": "Conditional Style",
             "notFoundContent": "Multiple values can be added (enter the content and press enter to complete the addition)"
           },
           "header": {
@@ -551,13 +560,56 @@
           "dotted": "Dotted"
         },
         "nameLocation": {
+          "title": "Name Location",
           "start": "Start",
           "center": "Center",
           "end": "End"
         },
         "legendType": {
+          "title": "Type",
           "plain": "Plain",
           "scroll": "Scroll"
+        },
+        "fontFamily": {
+          "default": "Default",
+          "microsoftYaHei": "Microsoft YaHei",
+          "simSun": "SimSun",
+          "simHei": "SimHei",
+          "helveticaNeue": "Helvetica Neue",
+          "helvetica": "Helvetica",
+          "arial": "Arial",
+          "sansSerif": "sans-serif"
+        },
+        "lineHeight": {
+          "default": "Default Line Height"
+        },
+        "fontWeight": {
+          "normal": "Normal",
+          "bold": "Bold",
+          "bolder": "Bolder",
+          "lighter": "Lighter"
+        },
+        "fontStyle": {
+          "normal": "Normal",
+          "italic": "Italic",
+          "oblique": "Oblique"
+        },
+        "position": {
+          "title": "Position",
+          "auto": "Auto",
+          "right": "Right",
+          "left": "Left",
+          "top": "Top",
+          "bottom": "Bottom",
+          "inside": "Inside",
+          "insideLeft": "Inside Left",
+          "insideRight": "Inside Right",
+          "insideTop": "Inside Top",
+          "insideBottom": "Inside Bottom",
+          "insideTopLeft": "Inside Top Left",
+          "insideBottomLeft": "Inside Bottom Left",
+          "insideTopRight": "Inside Top Right",
+          "insideBottomRight": "Inside Bottom Right"
         }
       },
       "data": {
@@ -574,6 +626,7 @@
         "size": "Size",
         "drop": "Drag some data fields here",
         "dropCount": "Drag {{count}} fields here at least",
+        "drillable": "Drillable",
         "actions": {
           "sort": {
             "title": "Sort",
@@ -658,11 +711,20 @@
           "endMetric": "End Reference Metric",
           "font": "Font",
           "showLabel": "Show",
-          "position": "Position",
+          "position": {
+            "title": "Position",
+            "start": "Start",
+            "middle": "Middle",
+            "end": "End"
+          },
           "lineStyle": "Line Style",
           "opacity": "Opacity",
           "backgroundColor": "Background Color",
-          "borderStyle": "Border Style"
+          "borderStyle": "Border Style",
+          "constant": "Constant",
+          "avg": "AVG",
+          "max": "Max",
+          "min": "Min"
         },
         "paging": {
           "title": "Common",
@@ -712,11 +774,41 @@
         "ok": "OK",
         "cancel": "Cancel",
         "number": "No.",
-        "summary": "Summary"
+        "summary": "Summary",
+        "richText": {
+          "bold": "Bold",
+          "italic": "Italic",
+          "underline": "Underline",
+          "strike": "Strike",
+          "indent": "Indent",
+          "indentUp": "Indent Up",
+          "ordered": "Ordered",
+          "list": "List",
+          "blockquote": "Blockquote",
+          "codeBlock": "Code Block",
+          "link": "Link",
+          "image": "Image",
+          "clean": "Clean",
+          "more": "More",
+          "families": "Families",
+          "fontSize": "Font Size",
+          "background": "Background",
+          "color": "Color",
+          "align": "Align"
+        }
+      },
+      "drill": {
+        "showNextLevel": "Show Next Level",
+        "expandNextLevel": "Expand Next Level",
+        "selectDrillStatus": "Mouse Click Drill Status",
+        "enable": "Enable",
+        "disable": "Disable",
+        "rollUp": "Roll Up"
       }
     },
     "action": {
       "common": {
+        "downloadForExcel": "Download Excel",
         "confirm": "Please Confirm",
         "ok": "OK",
         "cancel": "Cancel",
@@ -740,8 +832,36 @@
         "expireDate": "Expire Date",
         "enablePassword": "Password",
         "generateLink": "Generate Link",
-        "shareLink": "Share Link",
-        "downloadData": "Download Excel"
+        "shareLink": "Share management",
+        "downloadData": "Download Excel",
+        "downloadPDF": "Download PDF",
+        "downloadPicture": "Download Picture",
+        "NONE": "None",
+        "CODE": "Code",
+        "LOGIN": "Login",
+        "verificationMethod": "Verification method",
+        "dataPermission": "Data permission",
+        "loginUser": "User login",
+        "shareUser": "User share",
+        "userOrRole": "Assign roles/members",
+        "selectRole": "Select role",
+        "selectUser": "select members",
+        "save": "Save"
+      },
+      "shareList": {
+        "shareList": "Share link list",
+        "shortLink": "Short link",
+        "type": "Type",
+        "expireDate": "Expiration",
+        "operate": "Operate",
+        "copy": "Copy",
+        "copySuccess": "Copy success",
+        "delete": "Delete",
+        "addLink": "Add a link",
+        "deleteError": "Failed to delete",
+        "sureDelete": "sure you want to delete?",
+        "noDataTip": "No link yet, click on the top right corner to add",
+        "Permanent": "Permanent"
       }
     },
     "board": {
@@ -767,7 +887,10 @@
         "delete": "Delete",
         "copy": "Copy",
         "paste": "Paste",
-        "deviceSwitch": "Device Switch"
+        "deviceSwitch": "Device Switch",
+        "allowOverlap": "Allow Overlap",
+        "forbidOverlap": "Forbid Overlap",
+        "multiSelect": "MultiSelect"
       },
       "controlTypes": {
         "common": "Common",
@@ -820,7 +943,8 @@
         "autoPlay": "Auto Play",
         "duration": "Duration (s) ",
         "delPagesTip": "Confirm to delete all selected story pages?",
-        "delPageTip": "Confirm to delete this story page?"
+        "delPageTip": "Confirm to delete this story page?",
+        "enterHere": "Enter here"
       }
     },
     "widget": {
@@ -847,6 +971,7 @@
       "action": {
         "refresh": "Refresh",
         "fullScreen": "FullScreen",
+        "lock": "Lock",
         "edit": "Edit",
         "delete": "Delete",
         "confirmDel": "Confirm Delete",
@@ -856,6 +981,12 @@
         "closeLinkage": "Close Linkage",
         "makeJump": "Set Jump",
         "closeJump": "Close Jump"
+      },
+      "tips": {
+        "unlock": "LockIng drag and click to unlock",
+        "waiting": "Waiting for loadData",
+        "cancelLinkage": "Cancel Linkage",
+        "canLinkage": "Click the Widget to link"
       }
     },
     "linkage": {
@@ -864,7 +995,8 @@
       "associatedWidgets": "Associated Widgets",
       "associatedFields": "Associated Fields",
       "selectTriggers": "Select the trigger field",
-      "selectLinker": "Select linkage field"
+      "selectLinker": "Select linkage field",
+      "linkageError": "The linkage chart has been deleted, please reconfigure"
     },
     "jump": {
       "title": "Jump Settings",
@@ -874,7 +1006,8 @@
       "URL": "URL",
       "parameters": "Parameters",
       "controller": "Associated Controllers",
-      "associatedFields": "Associated Fields"
+      "associatedFields": "Associated Fields",
+      "jumpError": "The jump target has been invalidated or deleted, please reconfigure"
     },
     "associate": {
       "title": "Please associate fields/variables",
@@ -955,7 +1088,8 @@
         "label": "Layout",
         "auto": "Auto",
         "free": "Free",
-        "tips": "Auto : create responsive dashboard  Free : create ensure size dashboard",
+        "autoTips": "Auto: Responsive, fluid layout",
+        "freeTips": "Free: Precise, fixed layout",
         "requiredMessage": "Select a Layout Type"
       },
       "parent": "Parent",
@@ -980,6 +1114,7 @@
     "resultEmpty1": "Click ",
     "resultEmpty2": " button to execute, the results will be displayed here",
     "errorTitle": "Error occurred",
+    "sqlRequired": "SQL statement cannot be empty",
     "sqlRunWraning": "SQL parsing failed, welcome to submit an issue to help us improve. ",
     "detail": "Click here for details",
     "warningDescription": "Datart uses calcite to parse SQL statements by default; calcite has a awesome parser, but it still can't parse all the grammars of all databases. When a parsing exception occurs, datart will still send the SQL statement to the database for execution after necessary processing. If the execution is successful, we will think that the parser needs to be improved for the syntax of the SQL statement. In this case, datart will show this warning message, which is convenient for users to submit the exceptional parsing statements to github or gitee issue, and help us improve the parser.",
@@ -1010,6 +1145,7 @@
     "properties": {
       "reference": "Source reference",
       "variable": "Variables",
+      "model": "Data Model",
       "columnPermissions": "Column Permissions"
     },
     "resource": {
@@ -1022,6 +1158,16 @@
       "add": "Create variable",
       "prefix": "[Public]",
       "suffix": "duplicate"
+    },
+    "model": {
+      "type": "Type",
+      "rename": "Rename",
+      "delete": "Delete",
+      "typeAndCategory": "Type & Category",
+      "permission": "Column Permissions",
+      "newHierarchy": "New Hierarchy",
+      "addToHierarchy": "Add To Hierarchy",
+      "hierarchyName": "Hierarchy Name"
     },
     "columnPermission": {
       "title": "Column permissions",
@@ -1066,6 +1212,9 @@
     "archived": "Archived ",
     "noPermission": "You do not have permission to access this page",
     "creatView": "Creat View",
+    "syncDatabase": "Sync Database",
+    "syncDatabaseSchemaSuccess": "Sync database schema successfully",
+    "lastUpdateTime": "Last Update Time",
     "sidebar": {
       "title": "Sources",
       "add": "Create source",
@@ -1116,6 +1265,7 @@
       "remove": "Remove"
     },
     "form": {
+      "email": "Email",
       "search": "Search or paste the emails of invited members",
       "needConfirm": "Need email confirmation"
     },
